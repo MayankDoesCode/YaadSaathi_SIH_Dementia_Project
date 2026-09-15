@@ -1,0 +1,360 @@
+/**
+ * Mock data for YaadSaathi SIH prototype.
+ * Includes elderly patient profile, bilingual reminders, game questions, and caregiver metrics.
+ */
+
+export const INITIAL_PATIENT_PROFILE = {
+  nameHindi: 'दामोदर जी शर्मा',
+  nameEnglish: 'Damodar Sharma Ji',
+  age: 74,
+  condition: 'प्रारंभिक डिमेंशिया (Mild Cognitive Impairment / Early Dementia)',
+  preferredLanguage: 'hi',
+  emergencyContact: {
+    name: 'प्रिया शर्मा (सुपुत्री / Daughter)',
+    phone: '+91 98765 43210',
+    relationHindi: 'बेटी',
+    relationEnglish: 'Daughter',
+  },
+  doctorContact: {
+    name: 'डॉ. राजेश मेहता (न्यूरोलॉजिस्ट / Neurologist)',
+    phone: '+91 98111 22334',
+    clinic: 'अपोलो मेमोरियल क्लिनिक, जयपुर',
+  },
+  homeAddressHindi: 'बी-42, मालवीय नगर, जयपुर, राजस्थान',
+  homeAddressEnglish: 'B-42, Malviya Nagar, Jaipur, Rajasthan',
+};
+
+export const INITIAL_REMINDERS = [
+  {
+    id: 'rem-1',
+    time: '08:30 AM',
+    period: 'morning',
+    titleHindi: 'सुबह की बी.पी. की दवा',
+    titleEnglish: 'Morning BP Medicine',
+    descriptionHindi: 'टेल्मा 40mg - गुनगुने पानी के साथ नाश्ते के बाद लें।',
+    descriptionEnglish: 'Telma 40mg - Take with lukewarm water after breakfast.',
+    category: 'medicine',
+    icon: 'Pill',
+    color: 'emerald',
+    completed: true,
+  },
+  {
+    id: 'rem-2',
+    time: '09:30 AM',
+    period: 'morning',
+    titleHindi: 'धूप सेकना व बगीचे में सैर',
+    titleEnglish: 'Sunlight & Garden Walk',
+    descriptionHindi: 'बगीचे में 15 मिनट ताज़ी हवा लें और हरी घास देखें।',
+    descriptionEnglish: 'Spend 15 mins in fresh air and morning sunshine.',
+    category: 'wellness',
+    icon: 'Sun',
+    color: 'amber',
+    completed: true,
+  },
+  {
+    id: 'rem-3',
+    time: '11:30 AM',
+    period: 'afternoon',
+    titleHindi: 'ताज़ा गुनगुना पानी पिएं',
+    titleEnglish: 'Drink Warm Water (1 Glass)',
+    descriptionHindi: 'शरीर को तरोताज़ा रखने के लिए एक पूरा गिलास पानी पिएं।',
+    descriptionEnglish: 'Drink one full glass of water to stay hydrated.',
+    category: 'water',
+    icon: 'Droplets',
+    color: 'sky',
+    completed: false,
+  },
+  {
+    id: 'rem-4',
+    time: '01:30 PM',
+    period: 'afternoon',
+    titleHindi: 'दोपहर की शुगर की दवा',
+    titleEnglish: 'Afternoon Diabetes Pill',
+    descriptionHindi: 'ग्लाइकोमेट 500mg - दोपहर के भोजन के 10 मिनट बाद लें।',
+    descriptionEnglish: 'Glycomet 500mg - Take 10 mins after lunch.',
+    category: 'medicine',
+    icon: 'Pill',
+    color: 'emerald',
+    completed: false,
+  },
+  {
+    id: 'rem-5',
+    time: '05:00 PM',
+    period: 'evening',
+    titleHindi: 'शाम की अदरक चाय व यादसाथी खेल',
+    titleEnglish: 'Evening Ginger Tea & Brain Game',
+    descriptionHindi: 'चाय के साथ 10 मिनट यादसाथी का कोई भी प्यारा खेल खेलें।',
+    descriptionEnglish: 'Enjoy tea and play 10 mins of gentle memory games.',
+    category: 'activity',
+    icon: 'Coffee',
+    color: 'orange',
+    completed: false,
+  },
+  {
+    id: 'rem-6',
+    time: '09:00 PM',
+    period: 'night',
+    titleHindi: 'रात का गुनगुना दूध व कैल्शियम',
+    titleEnglish: 'Night Warm Milk & Calcium Pill',
+    descriptionHindi: 'सोने से पहले मीठा दूध और हड्डियों की गोली लें।',
+    descriptionEnglish: 'Take calcium tablet with warm milk before sleep.',
+    category: 'medicine',
+    icon: 'Moon',
+    color: 'indigo',
+    completed: false,
+  },
+];
+
+// Memory match cards with Indian elder-familiar cultural icons
+export const MEMORY_CARDS_CATALOG = [
+  { id: 'diya', nameHindi: 'दीपक (दीया)', nameEnglish: 'Diya (Lamp)', emoji: '🪔', color: 'bg-amber-100 border-amber-400 text-amber-900' },
+  { id: 'chai', nameHindi: 'गरम चाय', nameEnglish: 'Hot Tea', emoji: '☕', color: 'bg-orange-100 border-orange-400 text-orange-900' },
+  { id: 'peacock', nameHindi: 'सुंदर मोर', nameEnglish: 'Peacock', emoji: '🦚', color: 'bg-emerald-100 border-emerald-400 text-emerald-900' },
+  { id: 'lotus', nameHindi: 'कमल का फूल', nameEnglish: 'Lotus Flower', emoji: '🪷', color: 'bg-pink-100 border-pink-400 text-pink-900' },
+  { id: 'mango', nameHindi: 'मीठा आम', nameEnglish: 'Sweet Mango', emoji: '🥭', color: 'bg-yellow-100 border-yellow-400 text-yellow-900' },
+  { id: 'bell', nameHindi: 'मंदिर की घंटी', nameEnglish: 'Temple Bell', emoji: '🔔', color: 'bg-amber-100 border-amber-500 text-amber-900' },
+  { id: 'flute', nameHindi: 'बांसुरी', nameEnglish: 'Bansuri (Flute)', emoji: '🪈', color: 'bg-teal-100 border-teal-400 text-teal-900' },
+  { id: 'flower', nameHindi: 'गेंदे का फूल', nameEnglish: 'Marigold Flower', emoji: '🌼', color: 'bg-orange-100 border-orange-400 text-orange-900' },
+];
+
+// Pattern Recognition musical bell nodes
+export const PATTERN_BELLS = [
+  {
+    id: 0,
+    nameHindi: 'सूरज पीला',
+    nameEnglish: 'Sun Gold',
+    color: 'bg-amber-400 hover:bg-amber-300 border-amber-600 text-amber-950',
+    activeColor: 'bg-amber-200 border-amber-300 ring-8 ring-amber-300 shadow-xl shadow-amber-300/50',
+    frequency: 329.63, // E4
+    emoji: '☀️',
+  },
+  {
+    id: 1,
+    nameHindi: 'आसमान नीला',
+    nameEnglish: 'Sky Blue',
+    color: 'bg-sky-500 hover:bg-sky-400 border-sky-700 text-white',
+    activeColor: 'bg-sky-300 border-sky-200 ring-8 ring-sky-300 shadow-xl shadow-sky-300/50',
+    frequency: 392.00, // G4
+    emoji: '🌊',
+  },
+  {
+    id: 2,
+    nameHindi: 'तुलसी हरा',
+    nameEnglish: 'Tulsi Green',
+    color: 'bg-emerald-500 hover:bg-emerald-400 border-emerald-700 text-white',
+    activeColor: 'bg-emerald-300 border-emerald-200 ring-8 ring-emerald-300 shadow-xl shadow-emerald-300/50',
+    frequency: 523.25, // C5
+    emoji: '🌿',
+  },
+  {
+    id: 3,
+    nameHindi: 'गुलाब गुलाबी',
+    nameEnglish: 'Rose Pink',
+    color: 'bg-rose-500 hover:bg-rose-400 border-rose-700 text-white',
+    activeColor: 'bg-rose-300 border-rose-200 ring-8 ring-rose-300 shadow-xl shadow-rose-300/50',
+    frequency: 659.25, // E5
+    emoji: '🌸',
+  },
+];
+
+// Word Recall questions with elder-friendly Indian themes
+export const WORD_RECALL_QUESTIONS = [
+  {
+    id: 'wq-1',
+    categoryHindi: 'रसोई घर (Kitchen)',
+    categoryEnglish: 'Kitchen Objects',
+    questionHindi: 'रसोई में गरम चाय को कप में छानने के लिए किसका उपयोग किया जाता है?',
+    questionEnglish: 'What is used in the kitchen to strain hot tea into a cup?',
+    audioPromptHindi: 'रसोई में गरम चाय को कप में छानने के लिए किसका उपयोग किया जाता है?',
+    audioPromptEnglish: 'What is used in the kitchen to strain hot tea into a cup?',
+    icon: '☕',
+    correctId: 'opt-1',
+    options: [
+      { id: 'opt-1', textHindi: 'छलनी (Strainer)', textEnglish: 'Strainer (Chhalni)', emoji: '🫖', correct: true },
+      { id: 'opt-2', textHindi: 'हथौड़ा (Hammer)', textEnglish: 'Hammer', emoji: '🔨', correct: false },
+      { id: 'opt-3', textHindi: 'साबुन (Soap)', textEnglish: 'Soap', emoji: '🧼', correct: false },
+    ],
+    hintHindi: 'यह जालीदार होती है और चाय की पत्ती रोक लेती है।',
+    hintEnglish: 'It has a fine mesh to catch tea leaves.',
+  },
+  {
+    id: 'wq-2',
+    categoryHindi: 'प्रकृति और फल (Fruits & Nature)',
+    categoryEnglish: 'Fruits & Nature',
+    questionHindi: 'गर्मियों के मौसम में आने वाला पीला और मीठा "फलों का राजा" कौन सा है?',
+    questionEnglish: 'Which yellow and sweet fruit is called the "King of Fruits" in summer?',
+    audioPromptHindi: 'गर्मियों में आने वाला मीठा फलों का राजा कौन सा है?',
+    audioPromptEnglish: 'Which sweet fruit is called the King of Fruits?',
+    icon: '🥭',
+    correctId: 'opt-2',
+    options: [
+      { id: 'opt-1', textHindi: 'करेला (Bitter Gourd)', textEnglish: 'Bitter Gourd', emoji: '🥒', correct: false },
+      { id: 'opt-2', textHindi: 'आम (Mango)', textEnglish: 'Mango (Aam)', emoji: '🥭', correct: true },
+      { id: 'opt-3', textHindi: 'हरी मिर्च (Green Chilli)', textEnglish: 'Green Chilli', emoji: '🌶️', correct: false },
+    ],
+    hintHindi: 'दशहरी, लंगड़ा और हापुस इसी के प्रकार हैं।',
+    hintEnglish: 'Alphonso and Dussehri are popular types.',
+  },
+  {
+    id: 'wq-3',
+    categoryHindi: 'पूजा और आस्था (Prayer & Faith)',
+    categoryEnglish: 'Prayer & Faith',
+    questionHindi: 'सुबह मंदिर में पूजा या आरती करते समय हम क्या बजाते हैं?',
+    questionEnglish: 'What do we ring during morning prayer or aarti at the temple?',
+    audioPromptHindi: 'सुबह मंदिर में पूजा या आरती करते समय हम क्या बजाते हैं?',
+    audioPromptEnglish: 'What do we ring during morning prayer or aarti?',
+    icon: '🪔',
+    correctId: 'opt-3',
+    options: [
+      { id: 'opt-1', textHindi: 'टेलीविजन (TV)', textEnglish: 'Television', emoji: '📺', correct: false },
+      { id: 'opt-2', textHindi: 'साइकिल (Bicycle)', textEnglish: 'Bicycle', emoji: '🚲', correct: false },
+      { id: 'opt-3', textHindi: 'पीतल की घंटी (Bell)', textEnglish: 'Brass Bell (Ghanti)', emoji: '🔔', correct: true },
+    ],
+    hintHindi: 'इसकी आवाज "टन-टन" गूंजती है।',
+    hintEnglish: 'It rings with a soothing resonant chime.',
+  },
+  {
+    id: 'wq-4',
+    categoryHindi: 'पारिवारिक रिश्ते (Family)',
+    categoryEnglish: 'Family Relationships',
+    questionHindi: 'आपकी बेटी या बेटे के बच्चे आपको आदर से क्या कहकर पुकारते हैं?',
+    questionEnglish: 'What do your daughter or son\'s children lovingly call you?',
+    audioPromptHindi: 'आपकी बेटी या बेटे के बच्चे आपको क्या कहकर पुकारते हैं?',
+    audioPromptEnglish: 'What do your daughter or son\'s children lovingly call you?',
+    icon: '👨‍🦳',
+    correctId: 'opt-1',
+    options: [
+      { id: 'opt-1', textHindi: 'दादाजी / नानाजी (Grandfather)', textEnglish: 'Grandfather (Dadaji/Nanaji)', emoji: '👴', correct: true },
+      { id: 'opt-2', textHindi: 'छोटा भाई (Little Brother)', textEnglish: 'Little Brother', emoji: '👦', correct: false },
+      { id: 'opt-3', textHindi: 'अजनबी (Stranger)', textEnglish: 'Stranger', emoji: '👤', correct: false },
+    ],
+    hintHindi: 'आप परिवार के सबसे सम्मानित और अनुभवी बुजुर्ग हैं।',
+    hintEnglish: 'You are the elder grandparent of the family.',
+  },
+];
+
+// Caregiver Dashboard Metrics
+export const CAREGIVER_METRICS = {
+  weeklyEngagement: [
+    { dayHindi: 'सोम', dayEnglish: 'Mon', score: 85, minutes: 25 },
+    { dayHindi: 'मंगल', dayEnglish: 'Tue', score: 92, minutes: 30 },
+    { dayHindi: 'बुध', dayEnglish: 'Wed', score: 78, minutes: 18 },
+    { dayHindi: 'गुरु', dayEnglish: 'Thu', score: 95, minutes: 35 },
+    { dayHindi: 'शुक्र', dayEnglish: 'Fri', score: 88, minutes: 24 },
+    { dayHindi: 'शनि', dayEnglish: 'Sat', score: 96, minutes: 40 },
+    { dayHindi: 'रवि (आज)', dayEnglish: 'Sun (Today)', score: 90, minutes: 28 },
+  ],
+  adherenceRate: 94, // percent
+  totalPillsScheduledToday: 4,
+  pillsTakenToday: 2,
+  moodTrend: {
+    happy: 5,
+    neutral: 2,
+    confused: 0,
+    anxious: 0,
+  },
+  cognitiveTrend: '+12% Memory Recall over last 3 weeks',
+  geoStatus: {
+    status: 'safe',
+    labelHindi: 'सुरक्षित क्षेत्र (घर पर)',
+    labelEnglish: 'Safe Inside Home Zone',
+    location: 'मालवीय नगर, सेक्टर 4, जयपुर',
+    lastPing: 'अभी (Just now)',
+  },
+  emergencyContacts: [
+    { name: 'प्रिया शर्मा (सुपुत्री / Daughter)', phone: '+91 98765 43210', role: 'प्राथमिक देखभालकर्ता (Primary Caregiver)' },
+    { name: 'अमित शर्मा (पुत्र / Son - Bengaluru)', phone: '+91 98222 33445', role: 'पारिवारिक संपर्क (Family Contact)' },
+    { name: 'डॉ. राजेश मेहता (न्यूरोलॉजिस्ट)', phone: '+91 98111 22334', role: 'पारिवारिक डॉक्टर (Family Doctor)' },
+    { name: 'एम्बुलेंस आपातकालीन सेवा', phone: '108', role: 'आपातकालीन (Emergency 24x7)' },
+  ],
+};
+
+// Initial Medicine Schedules (Requirement 2)
+export const INITIAL_MEDICINES = [
+  {
+    id: 'med-001',
+    name: 'Blood Pressure Medicine (Telma 40)',
+    dosage: '1 tablet',
+    instructions: 'After breakfast with lukewarm water',
+    scheduledTime: '08:00',
+    frequency: 'Daily',
+    active: true,
+    reminderIntervalMinutes: 15,
+    escalationAfterMinutes: 60,
+    status: 'SCHEDULED', // SCHEDULED, REMINDER_PENDING, TAKEN, NOT_CONFIRMED, MISSED
+    lastReminderAt: null,
+    firstReminderAt: null,
+    confirmedAt: null,
+    caregiverAlertSent: false,
+    snoozeCount: 0,
+  },
+  {
+    id: 'med-002',
+    name: 'Vitamin D & Calcium',
+    dosage: '1 capsule',
+    instructions: 'After lunch with water or milk',
+    scheduledTime: '13:00',
+    frequency: 'Daily',
+    active: true,
+    reminderIntervalMinutes: 15,
+    escalationAfterMinutes: 60,
+    status: 'SCHEDULED',
+    lastReminderAt: null,
+    firstReminderAt: null,
+    confirmedAt: null,
+    caregiverAlertSent: false,
+    snoozeCount: 0,
+  },
+  {
+    id: 'med-003',
+    name: 'Night Memory Tablet (Donepezil 5mg)',
+    dosage: '1 tablet',
+    instructions: 'Bedtime after light dinner',
+    scheduledTime: '21:00',
+    frequency: 'Daily',
+    active: true,
+    reminderIntervalMinutes: 15,
+    escalationAfterMinutes: 60,
+    status: 'SCHEDULED',
+    lastReminderAt: null,
+    firstReminderAt: null,
+    confirmedAt: null,
+    caregiverAlertSent: false,
+    snoozeCount: 0,
+  },
+];
+
+// Initial Medicine History (Requirement 13)
+export const INITIAL_MEDICINE_HISTORY = [
+  {
+    id: 'hist-1',
+    date: '14 Sep 2026',
+    medicineId: 'med-001',
+    medicineName: 'Blood Pressure Medicine (Telma 40)',
+    dosage: '1 tablet',
+    scheduledTime: '08:00',
+    status: 'TAKEN',
+    confirmedAt: '08:17 AM',
+  },
+  {
+    id: 'hist-2',
+    date: '14 Sep 2026',
+    medicineId: 'med-002',
+    medicineName: 'Vitamin D & Calcium',
+    dosage: '1 capsule',
+    scheduledTime: '13:00',
+    status: 'TAKEN',
+    confirmedAt: '01:12 PM',
+  },
+  {
+    id: 'hist-3',
+    date: '14 Sep 2026',
+    medicineId: 'med-003',
+    medicineName: 'Night Memory Tablet (Donepezil 5mg)',
+    dosage: '1 tablet',
+    scheduledTime: '21:00',
+    status: 'NOT_CONFIRMED',
+    confirmedAt: null,
+  },
+];
+

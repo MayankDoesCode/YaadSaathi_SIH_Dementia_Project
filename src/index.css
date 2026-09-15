@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --app-font-scale: 1.0;
+    --color-cream: #FBFAF4;
+    --color-navy: #102A43;
+    --color-muted: #5D7184;
+    --color-deep-green: #167A55;
+    --color-light-green: #DFF3E7;
+    --color-soft-mint: #EAF7EF;
+    --color-blue: #2879D0;
+    --color-soft-blue: #E6F1FF;
+    --color-pink: #E84D78;
+    --color-soft-pink: #FFE8EF;
+    --color-orange: #E98A20;
+    --color-soft-orange: #FFF0D7;
+    --color-purple: #7658C8;
+    --color-soft-purple: #EEE9FF;
+  }
+
+  html {
+    font-size: calc(16px * var(--app-font-scale, 1));
+    font-family: 'Outfit', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    background-color: #FBFAF4;
+    color: #102A43;
+    overflow-x: hidden;
+  }
+
+  body {
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+}
+
+
+/* Elderly-friendly tactile button styling with gentle 3D feel */
+.tactile-btn {
+  transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 0 0 rgba(16, 42, 67, 0.15);
+}
+
+.tactile-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 0 rgba(16, 42, 67, 0.15);
+}
+
+/* Card hover animation */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -6px rgba(16, 42, 67, 0.08);
+}
+
+/* Soothing Pulse for voice guidance */
+@keyframes calm-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(22, 122, 85, 0.35);
+  }
+  50% {
+    transform: scale(1.04);
+    box-shadow: 0 0 0 10px rgba(22, 122, 85, 0);
+  }
+}
+
+.speaking-pulse {
+  animation: calm-pulse 1.6s infinite;
+}
+
+/* Slow calming animations for splash screen */
+@keyframes slow-fade-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes gentle-sway {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(3deg); }
+}
+
+.animate-slow-fade {
+  animation: slow-fade-in 1.2s ease-out forwards;
+}
+
+.animate-sway {
+  animation: gentle-sway 4s ease-in-out infinite;
+}
