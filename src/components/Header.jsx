@@ -141,7 +141,8 @@ export default function Header() {
               sounds.playClickChime();
               setSosModalOpen(true);
             }}
-            className="tactile-btn flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-2xl bg-[#E84D78] hover:bg-[#D43B66] border-2 border-[#B82B53] text-white font-black text-sm sm:text-base shadow-sm min-h-[46px] cursor-pointer animate-pulse"
+            {/* Issue 1: High-contrast accessible crimson (contrast > 6.5:1 with solid white text) */}
+            className="tactile-btn flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-2xl bg-[#9E163B] hover:bg-[#831843] border-2 border-[#650E28] text-white font-black text-sm sm:text-base shadow-sm min-h-[46px] cursor-pointer ring-2 ring-[#B82B53]/40"
             title={t('sos')}
           >
             <Heart className="w-5 h-5 fill-white stroke-none" />

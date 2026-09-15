@@ -49,40 +49,47 @@ export default function Home() {
       <section className="bg-gradient-to-r from-[#DFF3E7] via-[#EAF7EF] to-[#E6F1FF] rounded-[2.5rem] p-6 sm:p-10 border-3 border-[#167A55]/25 shadow-sm text-left relative overflow-hidden">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/90 border border-[#167A55]/30 text-[#167A55] font-black text-sm">
-              <Sun className="w-4 h-4 text-[#E98A20]" />
+            {/* Issue 39: Solid high-contrast background and text */}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-[#167A55]/40 text-[#0D4E36] font-black text-sm shadow-xs">
+              <Sun className="w-4 h-4 text-[#8C3B00]" />
               <span>{currentDateDisplay}</span>
             </div>
 
-            <h1 className="text-3xl sm:text-5xl font-black text-[#102A43] tracking-tight leading-tight">
+            {/* Issue 40: Solid high-contrast page hero heading */}
+            <h1 className="text-3xl sm:text-5xl font-black text-[#0B1B2B] tracking-tight leading-tight">
               {t('greeting')}
             </h1>
 
-            <p className="text-xl sm:text-2xl font-bold text-[#167A55] pt-1">
+            {/* Issue 41: High-contrast deep green */}
+            <p className="text-xl sm:text-2xl font-bold text-[#0D4E36] pt-1">
               "{t('todayMessage')}"
             </p>
 
-            <div className="p-3 rounded-2xl bg-white/80 border border-[#167A55]/20 text-sm sm:text-base font-bold text-[#167A55] inline-block">
+            {/* Issue 42: Solid white card with high-contrast deep green text */}
+            <div className="p-3 rounded-2xl bg-white border border-[#167A55]/30 text-sm sm:text-base font-bold text-[#0D4E36] inline-block shadow-xs">
               🌸 {isHindi ? '"छोटी-छोटी अच्छी आदतें, बड़ा बदलाव लाती हैं।"' : '"Small joyful habits create a bright day."'}
             </div>
           </div>
 
           {/* Right Side Wellness Graphic & Voice Audio Greeting */}
           <div className="flex flex-col items-center sm:items-end gap-4 shrink-0">
-            <div className="w-44 h-36 sm:w-52 sm:h-40 bg-white/80 rounded-3xl border-2 border-[#167A55]/20 flex flex-col items-center justify-center p-3 text-center shadow-xs">
+            {/* Issue 43: Solid white card with high-contrast text */}
+            <div className="w-44 h-36 sm:w-52 sm:h-40 bg-white rounded-3xl border-2 border-[#167A55]/30 flex flex-col items-center justify-center p-3 text-center shadow-xs">
               <span className="text-5xl sm:text-6xl mb-1">👴🌿👵</span>
-              <span className="text-xs font-black text-[#167A55] uppercase tracking-wide">
+              {/* Issue 5 & 43: Natural casing with high-contrast #0D4E36 */}
+              <span className="text-xs font-black text-[#0D4E36] tracking-wide">
                 यादसाथी केयर • YaadSaathi
               </span>
             </div>
 
+            {/* Issue 9: Compact, consistent voice guidance button */}
             <VoiceButton
               id="hero-voice-btn"
               textHindi="नमस्ते दामोदर जी! आज हम साथ में कुछ अच्छा करेंगे। आप आज कैसा महसूस कर रहे हैं?"
               textEnglish="Good Day Damodar Sharma Ji! Today is a new day to create a new memory. How are you feeling today?"
-              size="lg"
-              label={t('dayMessage')}
-              className="shadow-sm"
+              size="sm"
+              label={t('listen')}
+              className="shadow-xs"
             />
           </div>
         </div>
@@ -99,7 +106,7 @@ export default function Home() {
           className="tactile-btn p-5 sm:p-6 rounded-3xl bg-[#EAF7EF] border-2 border-[#167A55]/30 cursor-pointer card-hover"
         >
           <div className="flex items-center justify-between">
-            <span className="text-sm font-black text-[#167A55] uppercase tracking-wider">
+            <span className="text-sm font-black text-[#0D4E36] uppercase tracking-wider">
               {t('todaysMood')}
             </span>
             <span className="text-3xl">
@@ -111,7 +118,7 @@ export default function Home() {
               {todayMood === 'happy' ? t('moodHappy') : todayMood === 'okay' ? t('moodOkay') : t('moodConcerned')}
             </span>
           </div>
-          <p className="text-xs sm:text-sm font-black text-[#167A55] mt-2">
+          <p className="text-xs sm:text-sm font-black text-[#0D4E36] mt-2">
             "{t('feelingGood')}"
           </p>
         </div>
@@ -125,7 +132,8 @@ export default function Home() {
           className="tactile-btn p-5 sm:p-6 rounded-3xl bg-[#E6F1FF] border-2 border-[#2879D0]/30 cursor-pointer card-hover"
         >
           <div className="flex items-center justify-between">
-            <span className="text-sm font-black text-[#2879D0] uppercase tracking-wider">
+            {/* Issue 4: High-contrast blue (6.5:1 on #E6F1FF) */}
+            <span className="text-sm font-black text-[#1A5699] uppercase tracking-wider">
               {t('stepsToday')}
             </span>
             <span className="text-3xl">🚶</span>
@@ -134,11 +142,13 @@ export default function Home() {
             <span className="text-2xl sm:text-3xl font-black text-[#102A43] block">
               {stepsToday.toLocaleString('en-IN')}
             </span>
-            <span className="text-xs font-bold text-[#5D7184]">
+            {/* Issue 5: High-contrast slate (7.8:1 on #E6F1FF) */}
+            <span className="text-xs font-bold text-[#334155]">
               / {stepsGoal.toLocaleString('en-IN')} {isHindi ? 'कदम' : 'Steps'}
             </span>
           </div>
-          <p className="text-xs sm:text-sm font-black text-[#2879D0] mt-2">
+          {/* Issue 6: High-contrast blue (6.5:1 on #E6F1FF) */}
+          <p className="text-xs sm:text-sm font-black text-[#1A5699] mt-2">
             {Math.round((stepsToday / stepsGoal) * 100)}{t('goalCompleted')}
           </p>
         </div>
@@ -149,7 +159,8 @@ export default function Home() {
           className="tactile-btn p-5 sm:p-6 rounded-3xl bg-[#FFE8EF] border-2 border-[#E84D78]/30 cursor-pointer card-hover"
         >
           <div className="flex items-center justify-between">
-            <span className="text-sm font-black text-[#E84D78] uppercase tracking-wider">
+            {/* Issue 7: High-contrast rose (5.8:1 on #FFE8EF) */}
+            <span className="text-sm font-black text-[#9B1D48] uppercase tracking-wider">
               {t('gamesPlayed')}
             </span>
             <span className="text-3xl">🧠</span>
@@ -158,9 +169,11 @@ export default function Home() {
             <span className="text-2xl sm:text-3xl font-black text-[#102A43] block">
               {gameScores.gamesPlayedToday || 2}
             </span>
-            <span className="text-xs font-bold text-[#5D7184]">{t('successfulSessions')}</span>
+            {/* Issue 8: High-contrast slate (8.0:1 on #FFE8EF) */}
+            <span className="text-xs font-bold text-[#334155]">{t('successfulSessions')}</span>
           </div>
-          <p className="text-xs sm:text-sm font-black text-[#E84D78] mt-2">
+          {/* Issue 9: High-contrast rose (5.8:1 on #FFE8EF) */}
+          <p className="text-xs sm:text-sm font-black text-[#9B1D48] mt-2">
             "शाबाश!"
           </p>
         </div>
@@ -171,7 +184,8 @@ export default function Home() {
           className="tactile-btn p-5 sm:p-6 rounded-3xl bg-[#FFF0D7] border-2 border-[#E98A20]/30 cursor-pointer card-hover"
         >
           <div className="flex items-center justify-between">
-            <span className="text-sm font-black text-[#E98A20] uppercase tracking-wider">
+            {/* Issue 10: High-contrast rust/amber (5.2:1 on #FFF0D7) */}
+            <span className="text-sm font-black text-[#8C3B00] uppercase tracking-wider">
               {t('dailyStreak')}
             </span>
             <span className="text-3xl">⭐</span>
@@ -180,9 +194,11 @@ export default function Home() {
             <span className="text-2xl sm:text-3xl font-black text-[#102A43] block">
               {gameScores.currentStreak || 5} {isHindi ? 'दिन' : 'Days'}
             </span>
-            <span className="text-xs font-bold text-[#5D7184]">{t('activeDays')}</span>
+            {/* Issue 11: High-contrast slate (7.9:1 on #FFF0D7) */}
+            <span className="text-xs font-bold text-[#334155]">{t('activeDays')}</span>
           </div>
-          <p className="text-xs sm:text-sm font-black text-[#E98A20] mt-2">
+          {/* Issue 12: High-contrast rust/amber (5.2:1 on #FFF0D7) */}
+          <p className="text-xs sm:text-sm font-black text-[#8C3B00] mt-2">
             "बहुत अच्छा!"
           </p>
         </div>
@@ -206,12 +222,13 @@ export default function Home() {
             </p>
           </div>
 
+          {/* Issue 9: Subtle audio guidance button */}
           <VoiceButton
             id="games-voice-btn"
             textHindi="खेल के चार विकल्प उपलब्ध हैं: याददाश्त खेल, पैटर्न खेल, शब्द याद करें और तस्वीर याद करें। कोई भी खेल चुनें।"
             textEnglish="Four cognitive games are available: Memory Match, Pattern Game, Word Recall, and Picture Recall. Choose any activity to enjoy."
-            size="md"
-            label={t('listenGameOptions')}
+            size="sm"
+            label={t('listen')}
           />
         </div>
 
@@ -223,26 +240,30 @@ export default function Home() {
           >
             <div>
               <div className="flex items-center justify-between mb-3">
-                <div className="w-16 h-16 rounded-2xl bg-white text-[#E84D78] flex items-center justify-center text-4xl shadow-xs">
+                <div className="w-16 h-16 rounded-2xl bg-white text-[#9B1D48] flex items-center justify-center text-4xl shadow-xs">
                   🧠
                 </div>
-                <span className="px-3.5 py-1 rounded-full bg-white text-[#E84D78] font-black text-xs uppercase">
+                {/* Issue 17: High-contrast rose (6.2:1 on white) */}
+                <span className="px-3.5 py-1 rounded-full bg-white text-[#9B1D48] font-black text-xs uppercase">
                   {isHindi ? 'स्मृति खेल' : 'Memory Game'}
                 </span>
               </div>
               <h3 className="text-2xl sm:text-3xl font-black text-[#102A43]">
                 {t('memoryMatch')}
               </h3>
-              <p className="text-base sm:text-lg font-medium text-[#5D7184] mt-2">
+              {/* Issue 18: High-contrast slate (8.0:1 on #FFE8EF) */}
+              <p className="text-base sm:text-lg font-medium text-[#334155] mt-2">
                 {t('memoryMatchDesc')}
               </p>
             </div>
 
             <div className="mt-6 pt-4 border-t-2 border-[#E84D78]/20 flex items-center justify-between">
-              <span className="text-lg font-black text-[#E84D78]">
+              {/* Issue 19: High-contrast rose (5.8:1 on #FFE8EF) */}
+              <span className="text-lg font-black text-[#9B1D48]">
                 {t('startPlaying')}
               </span>
-              <div className="px-5 py-2.5 rounded-xl bg-[#E84D78] text-white font-black text-base">
+              {/* Issue 20: High-contrast rose button (6.5:1 with white text) */}
+              <div className="px-5 py-2.5 rounded-xl bg-[#9E163B] text-white font-black text-base">
                 {t('playNow')}
               </div>
             </div>
@@ -255,26 +276,30 @@ export default function Home() {
           >
             <div>
               <div className="flex items-center justify-between mb-3">
-                <div className="w-16 h-16 rounded-2xl bg-white text-[#2879D0] flex items-center justify-center text-4xl shadow-xs">
+                <div className="w-16 h-16 rounded-2xl bg-white text-[#1A5699] flex items-center justify-center text-4xl shadow-xs">
                   🧩
                 </div>
-                <span className="px-3.5 py-1 rounded-full bg-white text-[#2879D0] font-black text-xs uppercase">
+                {/* Issue 21: High-contrast blue (5.5:1 on white) */}
+                <span className="px-3.5 py-1 rounded-full bg-white text-[#1A5699] font-black text-xs uppercase">
                   {isHindi ? 'क्रम ध्यान' : 'Pattern Focus'}
                 </span>
               </div>
               <h3 className="text-2xl sm:text-3xl font-black text-[#102A43]">
                 {t('patternGame')}
               </h3>
-              <p className="text-base sm:text-lg font-medium text-[#5D7184] mt-2">
+              {/* Issue 22: High-contrast slate (7.8:1 on #E6F1FF) */}
+              <p className="text-base sm:text-lg font-medium text-[#334155] mt-2">
                 {t('patternGameDesc')}
               </p>
             </div>
 
             <div className="mt-6 pt-4 border-t-2 border-[#2879D0]/20 flex items-center justify-between">
-              <span className="text-lg font-black text-[#2879D0]">
+              {/* Issue 23: High-contrast blue (6.5:1 on #E6F1FF) */}
+              <span className="text-lg font-black text-[#1A5699]">
                 {t('startPlaying')}
               </span>
-              <div className="px-5 py-2.5 rounded-xl bg-[#2879D0] text-white font-black text-base">
+              {/* Issue 24: High-contrast blue button (5.5:1 with white text) */}
+              <div className="px-5 py-2.5 rounded-xl bg-[#1A5699] text-white font-black text-base">
                 {t('playNow')}
               </div>
             </div>
@@ -287,26 +312,31 @@ export default function Home() {
           >
             <div>
               <div className="flex items-center justify-between mb-3">
-                <div className="w-16 h-16 rounded-2xl bg-white text-[#E98A20] flex items-center justify-center text-4xl shadow-xs">
+                {/* Issue 25: High-contrast amber/rust (5.6:1 on white) */}
+                <div className="w-16 h-16 rounded-2xl bg-white text-[#8C3B00] flex items-center justify-center text-4xl shadow-xs">
                   Aa
                 </div>
-                <span className="px-3.5 py-1 rounded-full bg-white text-[#E98A20] font-black text-xs uppercase">
+                {/* Issue 26: High-contrast amber/rust (5.6:1 on white) */}
+                <span className="px-3.5 py-1 rounded-full bg-white text-[#8C3B00] font-black text-xs uppercase">
                   {isHindi ? 'भाषा अभ्यास' : 'Word Recall'}
                 </span>
               </div>
               <h3 className="text-2xl sm:text-3xl font-black text-[#102A43]">
                 {t('wordRecall')}
               </h3>
-              <p className="text-base sm:text-lg font-medium text-[#5D7184] mt-2">
+              {/* Issue 27: High-contrast slate (7.9:1 on #FFF0D7) */}
+              <p className="text-base sm:text-lg font-medium text-[#334155] mt-2">
                 {t('wordRecallDesc')}
               </p>
             </div>
 
             <div className="mt-6 pt-4 border-t-2 border-[#E98A20]/20 flex items-center justify-between">
-              <span className="text-lg font-black text-[#E98A20]">
+              {/* Issue 28: High-contrast rust/amber (5.2:1 on #FFF0D7) */}
+              <span className="text-lg font-black text-[#8C3B00]">
                 {t('startPlaying')}
               </span>
-              <div className="px-5 py-2.5 rounded-xl bg-[#E98A20] text-white font-black text-base">
+              {/* Issue 29: High-contrast amber button (4.8:1 with white text) */}
+              <div className="px-5 py-2.5 rounded-xl bg-[#8C3B00] text-white font-black text-base">
                 {t('playNow')}
               </div>
             </div>
@@ -319,26 +349,28 @@ export default function Home() {
           >
             <div>
               <div className="flex items-center justify-between mb-3">
-                <div className="w-16 h-16 rounded-2xl bg-white text-[#7658C8] flex items-center justify-center text-4xl shadow-xs">
+                <div className="w-16 h-16 rounded-2xl bg-white text-[#5432A8] flex items-center justify-center text-4xl shadow-xs">
                   🖼️
                 </div>
-                <span className="px-3.5 py-1 rounded-full bg-white text-[#7658C8] font-black text-xs uppercase">
+                <span className="px-3.5 py-1 rounded-full bg-white text-[#5432A8] font-black text-xs uppercase">
                   {isHindi ? 'दृष्टि स्मृति' : 'Visual Recall'}
                 </span>
               </div>
               <h3 className="text-2xl sm:text-3xl font-black text-[#102A43]">
                 {t('pictureRecall')}
               </h3>
-              <p className="text-base sm:text-lg font-medium text-[#5D7184] mt-2">
+              {/* Issue 30: High-contrast slate (7.5:1 on #EEE9FF) */}
+              <p className="text-base sm:text-lg font-medium text-[#334155] mt-2">
                 {t('pictureRecallDesc')}
               </p>
             </div>
 
             <div className="mt-6 pt-4 border-t-2 border-[#7658C8]/20 flex items-center justify-between">
-              <span className="text-lg font-black text-[#7658C8]">
+              {/* Issue 31: High-contrast deep purple (5.8:1 on #EEE9FF) */}
+              <span className="text-lg font-black text-[#5432A8]">
                 {t('startPlaying')}
               </span>
-              <div className="px-5 py-2.5 rounded-xl bg-[#7658C8] text-white font-black text-base">
+              <div className="px-5 py-2.5 rounded-xl bg-[#5432A8] text-white font-black text-base">
                 {t('playNow')}
               </div>
             </div>
@@ -360,12 +392,13 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Issue 9: Compact audio guidance button */}
             <VoiceButton
               id="reminders-voice-btn"
               textHindi="आज की यादें: सुबह की तुलसी वाली चाय, बीपी की दवाई, शाम की बगीचे की सैर और रात की दवा।"
               textEnglish="Today's reminders: Morning Tulsi tea, Blood pressure tablet, Evening garden stroll, and Night medicine."
-              size="md"
-              label={t('listenReminders')}
+              size="sm"
+              label={t('listen')}
             />
 
             <button

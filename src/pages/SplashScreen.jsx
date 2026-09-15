@@ -35,9 +35,10 @@ export default function SplashScreen() {
 
         {/* Tagline & Purpose */}
         <div className="space-y-3">
-          <h1 className="text-3xl sm:text-5xl font-black text-[#102A43] tracking-tight leading-tight">
+          {/* Issue 6: Tagline uses h2 to maintain single unambiguous H1 on dashboard */}
+          <h2 className="text-3xl sm:text-5xl font-black text-[#102A43] tracking-tight leading-tight">
             "साथ यादों का, हर दिन के लिए।"
-          </h1>
+          </h2>
           <p className="text-xl sm:text-2xl font-bold text-[#167A55]">
             "Saath Yaadon Ka, Har Din Ke Liye."
           </p>
@@ -88,7 +89,8 @@ export default function SplashScreen() {
         <p>
           स्मृति सहायता व संज्ञानात्मक जुड़ाव मंच • Memory & Cognitive Engagement Platform
         </p>
-        <p className="text-[11px] opacity-80 mt-0.5">
+        {/* Issue 3: Standard accessible font size (>= 12px) */}
+        <p className="text-xs sm:text-sm font-medium text-[#5D7184] mt-1">
           *यह मंच किसी चिकित्सकीय रोग का निदान या उपचार नहीं करता है।
         </p>
       </div>

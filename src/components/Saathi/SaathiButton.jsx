@@ -26,7 +26,8 @@ export default function SaathiButton() {
   if (isSpeaking) subLabel = isHindi ? 'बोल रही है...' : 'Speaking...';
 
   return (
-    <div className="fixed right-5 bottom-24 xl:bottom-8 z-40 flex flex-col items-center group">
+    /* Issue 8: Adjusted FAB position to prevent obscuring right-aligned content buttons */
+    <div className="fixed right-4 sm:right-6 bottom-20 xl:bottom-6 z-40 flex flex-col items-center group pointer-events-auto">
       {/* Floating Button */}
       <button
         id="floating-saathi-btn"

@@ -17,6 +17,14 @@
     --color-soft-orange: #FFF0D7;
     --color-purple: #7658C8;
     --color-soft-purple: #EEE9FF;
+
+    /* Issue 1: Standardized 6-Tier Modular Type Scale (under 10 distinct tiers) */
+    --type-caption: 0.75rem;    /* 12px - Micro text, badges, disclaimers */
+    --type-body-sm: 0.875rem;   /* 14px - Secondary descriptions, metadata */
+    --type-body:    1.00rem;    /* 16px - Base content, list items, body copy */
+    --type-lead:    1.125rem;   /* 18px - Card subtitles, prominent labels */
+    --type-title:   1.50rem;    /* 24px - Section and modal headers (h2) */
+    --type-hero:    2.25rem;    /* 36px - Primary page heading (h1) */
   }
 
   html {
@@ -34,6 +42,91 @@
   }
 }
 
+/* Issue 2: Standardized Button Component System (4 core cohesive variants) */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  padding: 0.875rem 1.5rem;
+  border-radius: 1rem;
+  background-color: #167A55;
+  color: #ffffff;
+  border: 2px solid #0D4E36;
+  box-shadow: 0 4px 0 0 rgba(13, 78, 54, 0.25);
+  cursor: pointer;
+  transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-primary:hover {
+  background-color: #115C40;
+}
+.btn-primary:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 0 rgba(13, 78, 54, 0.25);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  padding: 0.75rem 1.25rem;
+  border-radius: 1rem;
+  background-color: #FFFFFF;
+  color: #167A55;
+  border: 2px solid rgba(22, 122, 85, 0.35);
+  box-shadow: 0 3px 0 0 rgba(16, 42, 67, 0.08);
+  cursor: pointer;
+  transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-secondary:hover {
+  background-color: #EAF7EF;
+}
+.btn-secondary:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 0 rgba(16, 42, 67, 0.08);
+}
+
+.btn-emergency {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  padding: 0.625rem 1rem;
+  border-radius: 1rem;
+  background-color: #E84D78;
+  color: #ffffff;
+  border: 2px solid #B82B53;
+  box-shadow: 0 3px 0 0 rgba(184, 43, 83, 0.3);
+  cursor: pointer;
+  transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-emergency:hover {
+  background-color: #D43B66;
+}
+.btn-emergency:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 0 rgba(184, 43, 83, 0.3);
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem;
+  border-radius: 0.75rem;
+  border: 2px solid #DFF3E7;
+  background-color: #FBFAF4;
+  color: #102A43;
+  min-height: 44px;
+  min-width: 44px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.btn-icon:hover {
+  background-color: #EAF7EF;
+  border-color: #167A55;
+}
 
 /* Elderly-friendly tactile button styling with gentle 3D feel */
 .tactile-btn {

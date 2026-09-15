@@ -60,38 +60,42 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FBFAF4] text-[#102A43] transition-all duration-150">
-      {/* Optional Intro Splash Screen */}
-      {showSplash && <SplashScreen />}
+      {/* Issues 10 & 16: Exclusive Onboarding vs Main Application View */}
+      {showSplash ? (
+        <SplashScreen />
+      ) : (
+        <>
+          {/* Language Selection Modal */}
+          {showLanguageModal && <LanguageSelection />}
 
-      {/* Language Selection Modal */}
-      {showLanguageModal && <LanguageSelection />}
+          {/* Top Accessible Sticky Header */}
+          <Header />
 
-      {/* Top Accessible Sticky Header */}
-      <Header />
+          {/* Main Layout: Desktop Sidebar + Content */}
+          <div className="flex-1 flex max-w-[1600px] w-full mx-auto">
+            {/* Left Sidebar (Desktop) & Bottom Navigation Dock (Mobile) */}
+            <Sidebar />
 
-      {/* Main Layout: Desktop Sidebar + Content */}
-      <div className="flex-1 flex max-w-[1600px] w-full mx-auto">
-        {/* Left Sidebar (Desktop) & Bottom Navigation Dock (Mobile) */}
-        <Sidebar />
+            {/* Dynamic Page Container */}
+            <main className="flex-1 w-full p-3 sm:p-6 lg:p-8 pb-28 xl:pb-12 max-w-6xl mx-auto">
+              {renderScreen()}
+            </main>
+          </div>
 
-        {/* Dynamic Page Container */}
-        <main className="flex-1 w-full p-3 sm:p-6 lg:p-8 pb-28 xl:pb-12 max-w-6xl mx-auto">
-          {renderScreen()}
-        </main>
-      </div>
+          {/* Universal Footer */}
+          <Footer />
 
-      {/* Universal Footer */}
-      <Footer />
+          {/* Emergency SOS Modal */}
+          <QuickSosModal />
 
-      {/* Emergency SOS Modal */}
-      <QuickSosModal />
+          {/* Saathi Voice-First AI Companion (Floating Button & Conversation Panel) */}
+          <SaathiButton />
+          <SaathiPanel />
 
-      {/* Saathi Voice-First AI Companion (Floating Button & Conversation Panel) */}
-      <SaathiButton />
-      <SaathiPanel />
-
-      {/* Active Medicine Scheduled Reminder Modal */}
-      <MedicineReminderModal />
+          {/* Active Medicine Scheduled Reminder Modal */}
+          <MedicineReminderModal />
+        </>
+      )}
     </div>
   );
 }
