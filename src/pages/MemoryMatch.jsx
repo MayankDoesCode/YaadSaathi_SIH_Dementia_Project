@@ -9,6 +9,8 @@ import GameTopBar from '../components/games/GameTopBar';
 import AdaptiveDifficultyCard from '../components/games/AdaptiveDifficultyCard';
 import GameCompletionActions from '../components/games/GameCompletionActions';
 import { DIFFICULTY_LABELS } from '../logic/adaptiveEngine';
+import * as gamePersistenceService from '../services/gamePersistenceService';
+import { CognitiveDomain } from '../domain/cognitive/cognitiveTypes';
 
 const THEME = { bg: '#FFE8EF', border: '#E84D78', text: '#E84D78', btnBg: '#E84D78', btnHover: '#D43B66', btnBorder: '#B82B53' };
 
@@ -42,6 +44,7 @@ export default function MemoryMatch() {
   const [responseTimes, setResponseTimes] = useState([]); // seconds per tap
   const lastTapTimeRef = useRef(null);
   const timerIntervalRef = useRef(null);
+  const activeSessionRef = useRef({ sessionId: null, startedAt: null });
 
   // Encouraging feedback state after every action.
   // Stores a translation key + the raw (untranslated) card data rather than
@@ -138,6 +141,19 @@ export default function MemoryMatch() {
     lastTapTimeRef.current = null;
 
     setFeedback({ type: 'neutral', card: null });
+
+    // Start game session in IndexedDB
+    gamePersistenceService
+      .startGameSession({
+        gameId: 'memory-match',
+        difficultyLevel: cognitiveDifficulty || 3,
+      })
+      .then((session) => {
+        activeSessionRef.current = session;
+      })
+      .catch((err) => {
+        console.warn('[MemoryMatch] Could not start database session:', err);
+      });
   };
 
   useEffect(() => {
@@ -225,6 +241,34 @@ export default function MemoryMatch() {
             scoreUpdater: (prev) => ({ memoryMatchWins: (prev.memoryMatchWins || 0) + 1 }),
           });
           setAdaptiveResult(adaptive);
+
+          const finalMistakes = Math.max(0, finalAttempts - PAIR_COUNT);
+
+          // Persist Game Result to IndexedDB via gamePersistenceService
+          gamePersistenceService
+            .saveGameResult({
+              gameId: 'memory-match',
+              sessionId: activeSessionRef.current?.sessionId,
+              score: PAIR_COUNT * 10,
+              accuracy: finalAccuracy,
+              responseTime: finalAvgResp,
+              attempts: finalAttempts,
+              mistakes: finalMistakes,
+              hintsUsed: 0,
+              difficultyLevel: cognitiveDifficulty || 3,
+              cognitiveDomain: CognitiveDomain.MEMORY,
+              startedAt: activeSessionRef.current?.startedAt,
+              completedAt: new Date().toISOString(),
+              adaptiveRecommendation: adaptive,
+              metadata: {
+                pairCount: PAIR_COUNT,
+                totalSeconds: finalTimeSec,
+                formattedTime: formatTime(finalTimeSec),
+              },
+            })
+            .catch((err) => {
+              console.warn('[MemoryMatch] Could not save game result to database:', err);
+            });
 
           // Save game result to localStorage
           const gameResult = {

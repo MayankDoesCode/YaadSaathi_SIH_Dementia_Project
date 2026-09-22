@@ -76,6 +76,36 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Saathi AI Conversational Companion Banner */}
+      <section
+        onClick={() => navigateTo('saathi')}
+        className="tactile-btn p-5 sm:p-6 rounded-[2.5rem] bg-gradient-to-r from-[#1E56A0] via-[#167A55] to-[#2879D0] text-white shadow-md border-3 border-white flex flex-col sm:flex-row items-center justify-between gap-4 cursor-pointer card-hover"
+      >
+        <div className="flex items-center gap-4 text-left">
+          <div className="w-14 h-14 rounded-2xl bg-white text-[#167A55] flex items-center justify-center text-3xl shadow-sm shrink-0">
+            🌸
+          </div>
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-white/20 text-white font-black text-xs mb-1">
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>{isHindi ? 'AI मित्रवत साथी' : 'AI Friendly Companion'}</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black">
+              {isHindi ? 'साथी से बात करें' : 'Chat with Saathi'}
+            </h2>
+            <p className="text-emerald-100 font-bold text-sm sm:text-base mt-0.5">
+              {isHindi
+                ? 'अपनी दिनचर्या, पुरानी यादें या मन की कोई भी बात साझा करें।'
+                : 'Discuss your routine, cherished family memories, or anything on your mind.'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-white text-[#167A55] font-black text-base shadow-sm shrink-0">
+          <span>{isHindi ? 'चैट शुरू करें →' : 'Start Chat →'}</span>
+        </div>
+      </section>
+
       {/* 2. Mood / Steps / Games / Streak Quick Stats */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* CARD 1: Mood */}
@@ -178,6 +208,36 @@ export default function Home() {
 
       {/* 3. Step Tracker */}
       <StepTracker />
+
+      {/* Today's Personalized Plan Compact Card */}
+      <section
+        onClick={() => navigateTo('daily-plan')}
+        className="tactile-btn p-5 sm:p-6 rounded-[2.5rem] bg-gradient-to-r from-[#FFE8EF] via-[#FFF0D7] to-[#EAF7EF] border-3 border-[#167A55]/30 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4 cursor-pointer card-hover"
+      >
+        <div className="flex items-center gap-4 text-left">
+          <div className="w-14 h-14 rounded-2xl bg-white text-[#167A55] flex items-center justify-center text-3xl shadow-xs shrink-0">
+            🌸
+          </div>
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-[#167A55]/10 text-[#167A55] font-black text-xs mb-1">
+              <Sparkles className="w-3.5 h-3.5 text-[#E98A20]" />
+              <span>{isHindi ? "आज की साथी योजना" : "Today's Saathi Plan"}</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black text-[#102A43]">
+              {isHindi ? '3 गतिविधियां तैयार हैं' : '3 activities ready for you'}
+            </h2>
+            <p className="text-[#5D7184] font-bold text-sm sm:text-base mt-0.5">
+              {isHindi
+                ? 'स्मृति, एकाग्रता और दिनचर्या का संतुलित व सुखद अभ्यास।'
+                : 'Balanced, gentle stimulation tailored for your pace today.'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-[#167A55] hover:bg-[#126344] text-white font-black text-lg shadow-sm shrink-0">
+          <span>{isHindi ? 'शुरू करें →' : 'Start →'}</span>
+        </div>
+      </section>
 
       {/* 4. SafeCircle (Elderly Family-Location Safety Feature) */}
       <SafeCircleCard />

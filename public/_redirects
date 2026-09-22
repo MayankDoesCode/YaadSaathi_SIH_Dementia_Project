@@ -1,0 +1,3 @@
+/api/saathi/chat  /.netlify/functions/chat  200
+/api/health       /.netlify/functions/chat  200
+/*                /index.html               200

@@ -16,6 +16,7 @@ import voiceService from '../services/voiceService';
 
 export default function Settings() {
   const {
+    navigateTo,
     fontScale,
     setFontScale,
     patient,
@@ -287,7 +288,56 @@ export default function Settings() {
         )}
       </div>
 
-      {/* 6. Offline Ready Indicator */}
+      {/* 6. Personalization & Cultural Preferences (NER Profile & Meri Yaadein) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="bg-white rounded-[2.5rem] p-6 border-2 border-[#167A55]/30 shadow-xs flex flex-col justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-[#EAF7EF] text-[#167A55] flex items-center justify-center text-2xl">
+              🌏
+            </div>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-black text-[#102A43]">
+                {isHindi ? 'मेरा क्षेत्र व भाषा' : 'My Region & Language'}
+              </h2>
+              <p className="text-sm sm:text-base font-bold text-[#5D7184]">
+                {isHindi ? 'पूर्वोत्तर भारत (NER) राज्य, भाषा और सांस्कृतिक प्राथमिकताएं' : 'North East India state, language & cultural preferences'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigateTo('ner-profile')}
+            className="tactile-btn w-full py-3.5 px-6 rounded-2xl bg-[#167A55] hover:bg-[#115C40] text-white font-black text-base flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+          >
+            <span>🌏 {isHindi ? 'प्राथमिकताएं प्रबंधित करें' : 'Manage Region & Preferences'}</span>
+          </button>
+        </div>
+
+        <div className="bg-white rounded-[2.5rem] p-6 border-2 border-rose-200 shadow-xs flex flex-col justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-2xl">
+              ❤️
+            </div>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-black text-[#102A43]">
+                {isHindi ? 'मेरी यादें' : 'Meri Yaadein'}
+              </h2>
+              <p className="text-sm sm:text-base font-bold text-[#5D7184]">
+                {isHindi ? 'परिवार, प्रिय स्थान और सुखद संस्मरण जोड़ें व देखें' : 'Personal family memories, cherished places & stories'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigateTo('personal-memories')}
+            className="tactile-btn w-full py-3.5 px-6 rounded-2xl bg-[#E84393] hover:bg-[#D63031] text-white font-black text-base flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+          >
+            <span>❤️ {isHindi ? 'यादें देखें व जोड़ें' : 'View & Add Memories'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 7. Offline Ready Indicator */}
       <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-2 border-[#DFF3E7] shadow-xs space-y-3">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-[#EAF7EF] text-[#167A55] flex items-center justify-center">
