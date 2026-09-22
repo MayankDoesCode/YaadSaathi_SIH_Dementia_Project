@@ -1,51 +1,82 @@
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import {
-  RotateCcw,
-  Volume2,
-  Trophy,
-  Play,
-  Sparkles,
-  HelpCircle,
-  Eye,
-  CheckCircle2,
-  ArrowLeft,
-} from 'lucide-react';
+import { Volume2, Eye, CheckCircle2, Sparkles } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useI18n } from '../i18n/I18nContext';
 import { PATTERN_BELLS } from '../data/mockData';
-import VoiceButton from '../components/VoiceButton';
+import GameTopBar from '../components/games/GameTopBar';
+import AdaptiveDifficultyCard from '../components/games/AdaptiveDifficultyCard';
+import GameCompletionActions from '../components/games/GameCompletionActions';
+import { DIFFICULTY_LABELS } from '../logic/adaptiveEngine';
+
+const THEME = { bg: '#E6F1FF', border: '#2879D0', text: '#2879D0', btnBg: '#2879D0', btnHover: '#1C60AB', btnBorder: '#154E8D' };
 
 export default function PatternRecognition() {
-  const { navigateTo, sounds, voice, gameScores, setGameScores } = useApp();
+  const { navigateTo, sounds, voice, cognitiveDifficulty, recordGameResult } = useApp();
+  const { t, isHindi } = useI18n();
 
   const [sequence, setSequence] = useState([]);
   const [playerIndex, setPlayerIndex] = useState(0);
   const [activeBellId, setActiveBellId] = useState(null);
-  const [gameState, setGameState] = useState('idle'); // 'idle', 'playing-demo', 'player-turn', 'success', 'round-won'
+  const [gameState, setGameState] = useState('idle'); // 'idle', 'playing-demo', 'player-turn', 'round-won', 'success'
   const [round, setRound] = useState(1);
   const maxRounds = 4;
 
+  // Telemetry
+  const [correctTaps, setCorrectTaps] = useState(0);
+  const [totalTaps, setTotalTaps] = useState(0);
+  const [totalSeconds, setTotalSeconds] = useState(0);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [responseTimes, setResponseTimes] = useState([]);
+  const [adaptiveResult, setAdaptiveResult] = useState(null);
+  const lastTapTimeRef = useRef(null);
+  const timerIntervalRef = useRef(null);
   const timeoutsRef = useRef([]);
 
   const clearAllTimeouts = () => {
-    timeoutsRef.current.forEach((t) => clearTimeout(t));
+    timeoutsRef.current.forEach((tm) => clearTimeout(tm));
     timeoutsRef.current = [];
   };
 
-  // Start new game
+  useEffect(() => {
+    if (isTimerRunning && gameState !== 'success') {
+      timerIntervalRef.current = setInterval(() => setTotalSeconds((s) => s + 1), 1000);
+    } else {
+      clearInterval(timerIntervalRef.current);
+    }
+    return () => clearInterval(timerIntervalRef.current);
+  }, [isTimerRunning, gameState]);
+
+  const formatTime = (secs) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const accuracyPercent = totalTaps > 0 ? Math.round((correctTaps / totalTaps) * 100) : 100;
+  const avgResponseTime =
+    responseTimes.length > 0
+      ? (responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length).toFixed(1)
+      : '0.0';
+
   const startNewGame = () => {
     clearAllTimeouts();
     setRound(1);
+    setCorrectTaps(0);
+    setTotalTaps(0);
+    setTotalSeconds(0);
+    setIsTimerRunning(false);
+    setResponseTimes([]);
+    setAdaptiveResult(null);
+    lastTapTimeRef.current = null;
     generateNextRound(1);
   };
 
-  // Generate sequence for given round (e.g. round 1 = 2 steps, round 2 = 3 steps)
   const generateNextRound = (currentRound) => {
     clearAllTimeouts();
     setPlayerIndex(0);
     setGameState('playing-demo');
 
-    // Number of steps: round 1 has 2 steps, round 2 has 3 steps, round 3 has 4 steps
     const stepCount = currentRound + 1;
     const newSeq = [];
     for (let i = 0; i < stepCount; i++) {
@@ -53,14 +84,10 @@ export default function PatternRecognition() {
     }
     setSequence(newSeq);
 
-    // Play demo after a short moment
-    const startTimer = setTimeout(() => {
-      playSequenceDemo(newSeq);
-    }, 700);
+    const startTimer = setTimeout(() => playSequenceDemo(newSeq), 700);
     timeoutsRef.current.push(startTimer);
   };
 
-  // Playback sequence to senior
   const playSequenceDemo = (seqToPlay) => {
     setGameState('playing-demo');
     let delay = 300;
@@ -69,13 +96,10 @@ export default function PatternRecognition() {
       const timer = setTimeout(() => {
         highlightBell(bellId);
         if (index === seqToPlay.length - 1) {
-          // Finished playing sequence
           const endTimer = setTimeout(() => {
             setGameState('player-turn');
-            voice.speak(
-              'अब आपकी बारी है। उसी क्रम में रंगीन घंटियों को दबाएं।',
-              'Now your turn. Tap the colored bells in the same order.'
-            );
+            lastTapTimeRef.current = Date.now();
+            voice.speak(t('patternTurnSpeech'), t('patternTurnSpeech'));
           }, 800);
           timeoutsRef.current.push(endTimer);
         }
@@ -85,36 +109,41 @@ export default function PatternRecognition() {
     });
   };
 
-  // Highlight and ring a bell
   const highlightBell = (bellId) => {
     const bell = PATTERN_BELLS[bellId];
     if (bell) {
       sounds.playBellSound(bell.frequency);
       setActiveBellId(bellId);
-      const offTimer = setTimeout(() => {
-        setActiveBellId(null);
-      }, 550);
+      const offTimer = setTimeout(() => setActiveBellId(null), 550);
       timeoutsRef.current.push(offTimer);
     }
   };
 
-  // Senior taps a bell
   const handleBellTap = (bellId) => {
     if (gameState !== 'player-turn') return;
 
-    highlightBell(bellId);
+    if (!isTimerRunning) setIsTimerRunning(true);
 
-    // Check if correct
+    const now = Date.now();
+    if (lastTapTimeRef.current) {
+      const deltaSec = Math.min((now - lastTapTimeRef.current) / 1000, 15);
+      setResponseTimes((prev) => [...prev, deltaSec]);
+    }
+    lastTapTimeRef.current = now;
+
+    highlightBell(bellId);
+    setTotalTaps((prev) => prev + 1);
+
     if (bellId === sequence[playerIndex]) {
+      setCorrectTaps((prev) => prev + 1);
       const nextIndex = playerIndex + 1;
       setPlayerIndex(nextIndex);
 
       if (nextIndex === sequence.length) {
-        // Round completed successfully!
         sounds.playSuccessChime();
         if (round < maxRounds) {
           setGameState('round-won');
-          voice.speak('बहुत बढ़िया! अगला चक्र शुरू हो रहा है।', 'Very good! Moving to the next round.');
+          voice.speak(t('patternNextRoundSpeech'), t('patternNextRoundSpeech'));
           const nextRoundTimer = setTimeout(() => {
             const nextRound = round + 1;
             setRound(nextRound);
@@ -122,133 +151,103 @@ export default function PatternRecognition() {
           }, 1500);
           timeoutsRef.current.push(nextRoundTimer);
         } else {
-          // Final game won!
+          // Final round won!
           setGameState('success');
-          confetti({
-            particleCount: 90,
-            spread: 80,
-            origin: { y: 0.6 },
+          setIsTimerRunning(false);
+          confetti({ particleCount: 90, spread: 80, origin: { y: 0.6 } });
+
+          const finalAccuracy = Math.round(((correctTaps + 1) / (totalTaps + 1)) * 100);
+          const finalAvgResp =
+            responseTimes.length > 0
+              ? Number((responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length).toFixed(1))
+              : 2.5;
+
+          const adaptive = recordGameResult({
+            game: 'patternRecognition',
+            accuracy: finalAccuracy,
+            averageResponseTime: finalAvgResp,
+            starsEarned: 2,
+            scoreUpdater: (prev) => ({ patternStreak: Math.max(prev.patternStreak || 1, maxRounds) }),
           });
-          setGameScores((prev) => ({
-            ...prev,
-            patternStreak: Math.max(prev.patternStreak || 1, maxRounds),
-          }));
+          setAdaptiveResult(adaptive);
+
           voice.speak(
-            'अद्भुत! आपने सभी चक्र सफलतापूर्वक याद रखे! शाबाश!',
-            'Wonderful! You recalled all musical sequences perfectly! Well done!'
+            t('patternCompleteSpeech'),
+            t('patternCompleteSpeech')
           );
         }
       }
     } else {
       // Gentle assistance - elder didn't match
       sounds.playEncouragementChime();
-      voice.speak(
-        'कोई बात नहीं! चलिए फिर से धुन सुनते हैं।',
-        'No problem! Let us listen to the tune once again.'
-      );
+      voice.speak(t('patternMistakeSpeech'), t('patternMistakeSpeech'));
       setGameState('playing-demo');
       setPlayerIndex(0);
-      const retryTimer = setTimeout(() => {
-        playSequenceDemo(sequence);
-      }, 1200);
+      const retryTimer = setTimeout(() => playSequenceDemo(sequence), 1200);
       timeoutsRef.current.push(retryTimer);
     }
   };
 
   const handleListenRules = () => {
     sounds.playClickChime();
-    voice.speak(
-      'धुन और रंग पहचान खेल: पहले घंटियों की रोशनी और धुन को ध्यान से देखें। फिर उसी क्रम में रंगीन घंटियों को छुएं।',
-      'Pattern Recognition: First watch the colored bells light up and hear the melody. Then tap the bells in the exact same sequence.'
-    );
+    voice.speak(t('patternRulesSpeech'), t('patternRulesSpeech'));
   };
 
   useEffect(() => {
     startNewGame();
     return () => clearAllTimeouts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div className="space-y-6 pb-12 animate-fade-in text-left">
-      {/* Back button to Games Hub */}
-      <button
-        onClick={() => navigateTo('games')}
-        className="tactile-btn inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white border-2 border-[#DFF3E7] text-[#102A43] font-bold text-base hover:bg-[#EAF7EF] cursor-pointer"
-      >
-        <ArrowLeft className="w-5 h-5 text-[#167A55]" />
-        <span>सभी खेलों पर वापस जाएं (Back to Games)</span>
-      </button>
+      <GameTopBar
+        icon="🔔"
+        title={t('patternPageTitle')}
+        tagline={t('patternTagline')}
+        subtitle={t('patternSubtitle')}
+        theme={THEME}
+        onBack={() => navigateTo('games')}
+        onListenRules={handleListenRules}
+        onRestart={startNewGame}
+      />
 
-      {/* Header Banner - Blue Theme */}
-      <div className="bg-[#E6F1FF] rounded-[2.5rem] p-6 sm:p-8 border-3 border-[#2879D0]/40 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5 mb-1">
-            <span className="text-4xl">🔔</span>
-            <h1 className="text-3xl sm:text-5xl font-black text-[#102A43]">
-              धुन और रंग पहचान
-            </h1>
-          </div>
-          <p className="text-xl sm:text-2xl font-black text-[#2879D0]">
-            "रंगीन घंटियों की धुन देखें और उसी क्रम में दोहराएं"
-          </p>
-          <p className="text-base sm:text-lg font-bold text-[#5D7184] mt-0.5">
-            Musical Pattern Recognition • Sensory & Auditory Memory
-          </p>
-        </div>
-
-        <div className="flex items-center flex-wrap gap-2.5">
-          <button
-            onClick={handleListenRules}
-            className="tactile-btn flex items-center gap-2 px-5 py-3 rounded-2xl bg-white hover:bg-[#E6F1FF] border-2 border-[#2879D0] text-[#2879D0] font-black text-lg min-h-[52px] cursor-pointer shadow-xs"
-          >
-            <Volume2 className="w-6 h-6 animate-pulse" />
-            <span>🔊 नियम सुनें (Listen Rules)</span>
-          </button>
-
-          <button
-            onClick={startNewGame}
-            className="tactile-btn flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#2879D0] hover:bg-[#1C60AB] border-2 border-[#154E8D] text-white font-black text-lg min-h-[52px] cursor-pointer shadow-sm"
-          >
-            <RotateCcw className="w-6 h-6 stroke-[2.5]" />
-            <span>नया खेल (Restart)</span>
-          </button>
-        </div>
+      <div className="flex justify-end -mt-3">
+        <span className="px-3.5 py-1 bg-white border-2 border-[#2879D0]/30 rounded-full font-black text-xs sm:text-sm text-[#2879D0]">
+          {isHindi ? DIFFICULTY_LABELS[cognitiveDifficulty]?.hi : DIFFICULTY_LABELS[cognitiveDifficulty]?.en}
+        </span>
       </div>
 
-      {/* Round & Guidance Alert */}
+      {/* Round & Guidance + Live Telemetry */}
       <div className="bg-white rounded-3xl p-5 sm:p-6 border-2 border-[#DFF3E7] shadow-xs flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <span className="text-xl font-black text-[#102A43]">
-            चक्र (Round): <strong className="text-3xl text-[#2879D0]">{round}</strong> / {maxRounds}
+            {t('roundLabel')}: <strong className="text-3xl text-[#2879D0]">{round}</strong> / {maxRounds}
           </span>
-          <span className="text-base font-bold text-[#5D7184]">
-            ({sequence.length} सुरों की धुन)
-          </span>
+          <span className="text-base font-bold text-[#5D7184]">{t('patternMelodyCount', { count: sequence.length })}</span>
         </div>
 
-        {/* State Indicator */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" role="status" aria-live="polite">
           {gameState === 'playing-demo' ? (
-            <div className="flex items-center gap-2 px-5 py-2.5 bg-[#FFF0D7] border-2 border-[#E98A20] rounded-2xl text-[#102A43] font-black text-base animate-pulse">
-              <Eye className="w-5 h-5 text-[#E98A20]" />
-              <span>ध्यान से देखें और सुनें... (Watch & Listen)</span>
+            <div className="flex items-center gap-2 px-5 py-2.5 bg-[#FFF0D7] border-2 border-[#E98A20] rounded-2xl text-[#102A43] font-black text-base">
+              <Eye className="w-5 h-5 text-[#E98A20]" aria-hidden="true" />
+              <span>{t('patternWatchListen')}</span>
             </div>
           ) : gameState === 'player-turn' ? (
-            <div className="flex items-center gap-2 px-5 py-2.5 bg-[#EAF7EF] border-2 border-[#167A55] rounded-2xl text-[#167A55] font-black text-base animate-bounce">
-              <Sparkles className="w-5 h-5 text-[#167A55]" />
-              <span>अब आपकी बारी! घंटियों को छुएं (Your Turn!)</span>
+            <div className="flex items-center gap-2 px-5 py-2.5 bg-[#EAF7EF] border-2 border-[#167A55] rounded-2xl text-[#167A55] font-black text-base">
+              <Sparkles className="w-5 h-5 text-[#167A55]" aria-hidden="true" />
+              <span>{t('patternYourTurn')}</span>
             </div>
           ) : gameState === 'round-won' ? (
             <div className="flex items-center gap-2 px-5 py-2.5 bg-[#E6F1FF] border-2 border-[#2879D0] rounded-2xl text-[#2879D0] font-black text-base">
-              <CheckCircle2 className="w-5 h-5" />
-              <span>शाबाश! सही उत्तर!</span>
+              <CheckCircle2 className="w-5 h-5" aria-hidden="true" />
+              <span>{t('patternRoundWon')}</span>
             </div>
           ) : (
-            <div className="text-base font-bold text-[#5D7184]">तैयार हैं</div>
+            <div className="text-base font-bold text-[#5D7184]">{t('readyLabel')}</div>
           )}
         </div>
 
-        {/* Re-listen button */}
         {gameState === 'player-turn' && (
           <button
             onClick={() => {
@@ -256,40 +255,43 @@ export default function PatternRecognition() {
               setPlayerIndex(0);
               playSequenceDemo(sequence);
             }}
-            className="tactile-btn px-4 py-2 bg-[#FBFAF4] hover:bg-[#EAF7EF] border-2 border-[#DFF3E7] rounded-2xl text-[#102A43] font-bold text-sm flex items-center gap-1.5 cursor-pointer"
+            className="tactile-btn px-4 py-2 bg-[#FBFAF4] hover:bg-[#EAF7EF] border-2 border-[#DFF3E7] rounded-2xl text-[#102A43] font-bold text-sm flex items-center gap-1.5 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
           >
-            <Volume2 className="w-4 h-4 text-[#E98A20]" />
-            <span>धुन फिर से सुनें (Repeat Audio)</span>
+            <Volume2 className="w-4 h-4 text-[#E98A20]" aria-hidden="true" />
+            <span>{t('patternRepeatAudio')}</span>
           </button>
         )}
+      </div>
+
+      {/* Live Stats */}
+      <div className="grid grid-cols-3 gap-3 sm:gap-4">
+        <div className="bg-[#EAF7EF] rounded-3xl p-4 border-2 border-[#167A55]/30 text-center">
+          <span className="text-xs sm:text-sm font-bold text-[#5D7184] block">{t('accuracyLabel')}</span>
+          <span className="text-2xl sm:text-3xl font-black text-[#167A55] block mt-0.5">{accuracyPercent}%</span>
+        </div>
+        <div className="bg-white rounded-3xl p-4 border-2 border-[#DFF3E7] text-center">
+          <span className="text-xs sm:text-sm font-bold text-[#5D7184] block">{t('totalTimeLabel')}</span>
+          <span className="text-2xl sm:text-3xl font-mono font-black text-[#102A43] block mt-0.5">{formatTime(totalSeconds)}</span>
+        </div>
+        <div className="bg-[#FFF0D7] rounded-3xl p-4 border-2 border-[#E98A20]/30 text-center">
+          <span className="text-xs sm:text-sm font-bold text-[#5D7184] block">{t('speedLabel')}</span>
+          <span className="text-2xl sm:text-3xl font-mono font-black text-[#E98A20] block mt-0.5">{avgResponseTime}s</span>
+        </div>
       </div>
 
       {/* FINAL WIN CARD */}
       {gameState === 'success' && (
         <div className="bg-[#E6F1FF] border-4 border-[#2879D0] rounded-[2.5rem] p-6 sm:p-10 text-center shadow-xl animate-slow-fade">
-          <span className="text-6xl inline-block mb-3">🌟</span>
-          <h2 className="text-3xl sm:text-5xl font-black text-[#102A43]">
-            लाजवाब! आपने सभी धुनें पहचान लीं!
-          </h2>
-          <p className="mt-2 text-xl sm:text-2xl font-black text-[#2879D0]">
-            Outstanding! Your pattern memory is very sharp!
-          </p>
+          <span className="text-6xl inline-block mb-3" aria-hidden="true">🌟</span>
+          <h2 className="text-3xl sm:text-5xl font-black text-[#102A43]">{t('patternCompleteTitle')}</h2>
+          <p className="mt-2 text-xl sm:text-2xl font-black text-[#2879D0]">{t('patternCompleteSub')}</p>
 
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-            <button
-              onClick={startNewGame}
-              className="tactile-btn px-8 py-4 sm:py-5 rounded-2xl bg-[#2879D0] hover:bg-[#1C60AB] border-2 border-[#154E8D] text-white font-black text-xl sm:text-2xl flex items-center gap-3 shadow-lg cursor-pointer"
-            >
-              <RotateCcw className="w-7 h-7 stroke-[3]" />
-              <span>फिर से खेलें (Play Again)</span>
-            </button>
+          <AdaptiveDifficultyCard adaptiveResult={adaptiveResult} accuracyPercent={accuracyPercent} avgResponseTime={avgResponseTime} />
 
-            <button
-              onClick={() => navigateTo('games')}
-              className="tactile-btn px-6 py-4 sm:py-5 rounded-2xl bg-white hover:bg-[#FBFAF4] border-2 border-[#DFF3E7] text-[#102A43] font-black text-xl cursor-pointer"
-            >
-              अन्य खेल देखें (Other Games)
-            </button>
+          <p className="text-sm font-semibold text-[#167A55] mb-6">✓ {t('resultsSavedNote')}</p>
+
+          <div className="mt-2">
+            <GameCompletionActions onPlayAgain={startNewGame} onOtherGames={() => navigateTo('games')} theme={THEME} />
           </div>
         </div>
       )}
@@ -298,28 +300,23 @@ export default function PatternRecognition() {
       <div className="grid grid-cols-2 gap-4 sm:gap-8 max-w-xl mx-auto pt-2">
         {PATTERN_BELLS.map((bell) => {
           const isActive = activeBellId === bell.id;
+          const bellName = isHindi ? bell.nameHindi : bell.nameEnglish;
 
           return (
             <button
               key={bell.id}
               onClick={() => handleBellTap(bell.id)}
               disabled={gameState === 'playing-demo'}
-              className={`tactile-btn relative h-40 sm:h-52 rounded-3xl border-4 flex flex-col items-center justify-center p-4 transition-all duration-200 select-none cursor-pointer ${
+              aria-label={bellName}
+              className={`tactile-btn relative h-40 sm:h-52 rounded-3xl border-4 flex flex-col items-center justify-center p-4 transition-all duration-200 select-none cursor-pointer focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-[#102A43] ${
                 isActive ? `${bell.activeColor} scale-105 active-glow z-10` : bell.color
               } ${gameState === 'playing-demo' ? 'cursor-not-allowed opacity-90' : ''}`}
             >
-              <span className="text-5xl sm:text-7xl mb-2 filter drop-shadow">
-                {bell.emoji}
-              </span>
-              <span className="text-2xl sm:text-3xl font-black tracking-wide">
-                {bell.nameHindi}
-              </span>
-              <span className="text-sm sm:text-base font-bold opacity-90">
-                {bell.nameEnglish}
-              </span>
+              <span className="text-5xl sm:text-7xl mb-2 filter drop-shadow" aria-hidden="true">{bell.emoji}</span>
+              <span className="text-2xl sm:text-3xl font-black tracking-wide">{bellName}</span>
 
               {isActive && (
-                <div className="absolute inset-0 rounded-3xl border-4 border-white animate-ping opacity-60 pointer-events-none" />
+                <div className="absolute inset-0 rounded-3xl border-4 border-white animate-ping opacity-60 pointer-events-none" aria-hidden="true" />
               )}
             </button>
           );
@@ -328,4 +325,3 @@ export default function PatternRecognition() {
     </div>
   );
 }
-

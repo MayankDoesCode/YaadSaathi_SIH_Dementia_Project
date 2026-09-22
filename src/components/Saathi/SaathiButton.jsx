@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { Mic, Volume2, Loader2, Sparkles } from 'lucide-react';
+import { Volume2, Loader2 } from 'lucide-react';
 import { useSaathi } from '../../context/SaathiContext';
 import { useI18n } from '../../i18n/I18nContext';
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pill, CheckCircle2, Clock, Volume2, Sparkles, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Clock } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useI18n } from '../i18n/I18nContext';
 import VoiceButton from './VoiceButton';

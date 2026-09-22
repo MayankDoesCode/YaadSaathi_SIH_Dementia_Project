@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, MapPin, Home, Shield, AlertTriangle, CheckCircle2, Navigation, Compass } from 'lucide-react';
+import { X, Compass } from 'lucide-react';
 import { useI18n } from '../i18n/I18nContext';
 
 export default function SafeCircleMapModal({
@@ -10,7 +10,6 @@ export default function SafeCircleMapModal({
   safeRadius = 500,
   distanceFromHome,
   status,
-  isElderlyView = true,
 }) {
   const { t, isHindi } = useI18n();
 
@@ -18,7 +17,6 @@ export default function SafeCircleMapModal({
 
   const isSafe = status === 'SAFE';
   const isApproaching = status === 'APPROACHING';
-  const isOutside = status === 'OUTSIDE_SAFE_ZONE';
 
   // Coordinate offsets for visual SVG representation
   // Center is Home (200, 200).
@@ -51,14 +49,15 @@ export default function SafeCircleMapModal({
                 SafeCircle {t('safeZone')} {t('viewLocation')}
               </h3>
               <p className="text-xs sm:text-sm font-bold text-[#5D7184]">
-                {homeLocation?.address || '12-B, हजरतगंज, लखनऊ'}
+                {homeLocation?.address || (isHindi ? '12-B, हजरतगंज, लखनऊ' : '12-B, Hazratganj, Lucknow')}
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-[#FBFAF4] hover:bg-slate-100 text-[#5D7184] hover:text-[#102A43] cursor-pointer"
+            className="p-2 rounded-xl bg-[#FBFAF4] hover:bg-slate-100 text-[#5D7184] hover:text-[#102A43] cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+            aria-label={t('voiceClose')}
             title={t('voiceClose')}
           >
             <X className="w-6 h-6 stroke-[2.5]" />
@@ -127,7 +126,7 @@ export default function SafeCircleMapModal({
 
             {/* Safe Zone Boundary Label */}
             <text x="200" y={200 - pixelRadius - 8} textAnchor="middle" fill="#167A55" fontSize="11" fontWeight="bold">
-              सुरक्षित दायरा: 500 मीटर (Safe Radius)
+              {isHindi ? `सुरक्षित दायरा: ${safeRadius} मीटर` : `Safe Radius: ${safeRadius}m`}
             </text>
 
             {/* Home Marker in Center */}
@@ -136,7 +135,7 @@ export default function SafeCircleMapModal({
               <text x="15" y="24" textAnchor="middle" fill="white" fontSize="16">🏠</text>
             </g>
             <text x="200" y="226" textAnchor="middle" fill="#102A43" fontSize="12" fontWeight="black">
-              दामोदर जी का घर (Home)
+              {isHindi ? 'घर (Home)' : 'Home'}
             </text>
 
             {/* Connecting line between Home and User */}
@@ -165,26 +164,30 @@ export default function SafeCircleMapModal({
               fontWeight="black"
               className="bg-white"
             >
-              दामोदर जी ({distanceFromHome}m)
+              {isHindi ? `आप (${distanceFromHome}m)` : `You (${distanceFromHome}m)`}
             </text>
           </svg>
 
           {/* Compass Rose Widget in corner */}
           <div className="absolute top-4 right-4 bg-white/90 p-2 rounded-2xl border border-[#DFF3E7] shadow-xs flex items-center gap-1 text-xs font-bold text-[#5D7184]">
-            <Compass className="w-4 h-4 text-[#167A55]" />
-            <span>उत्तर (N)</span>
+            <Compass className="w-4 h-4 text-[#167A55]" aria-hidden="true" />
+            <span>{isHindi ? 'उत्तर (N)' : 'North (N)'}</span>
           </div>
         </div>
 
         {/* Location Coordinates & Privacy Note */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm font-semibold text-[#5D7184]">
           <div className="p-3 rounded-2xl bg-[#FBFAF4] border border-[#E2E8F0]">
-            <span className="font-black text-[#102A43] block">वर्तमान पता (Current Location):</span>
+            <span className="font-black text-[#102A43] block">{isHindi ? 'वर्तमान पता:' : 'Current Location:'}</span>
             <p className="mt-0.5">{userLocation?.address}</p>
           </div>
           <div className="p-3 rounded-2xl bg-[#FBFAF4] border border-[#E2E8F0]">
-            <span className="font-black text-[#102A43] block">गोपनीयता सूचना (Privacy Notice):</span>
-            <p className="mt-0.5">स्थान केवल अधिकृत देखभालकर्ता (रवि शर्मा) के साथ साझा किया जाता है।</p>
+            <span className="font-black text-[#102A43] block">{isHindi ? 'गोपनीयता सूचना:' : 'Privacy Notice:'}</span>
+            <p className="mt-0.5">
+              {isHindi
+                ? 'स्थान केवल अधिकृत देखभालकर्ता के साथ साझा किया जाता है।'
+                : 'Location is shared only with your authorized family caregiver.'}
+            </p>
           </div>
         </div>
 

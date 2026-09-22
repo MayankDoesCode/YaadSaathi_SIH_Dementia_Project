@@ -33,7 +33,6 @@ export default function SafeCircleCard() {
 
   const isSafe = safeZoneStatus === 'SAFE';
   const isApproaching = safeZoneStatus === 'APPROACHING';
-  const isOutside = safeZoneStatus === 'OUTSIDE_SAFE_ZONE';
 
   const handleToggleSharing = () => {
     sounds.playClickChime();

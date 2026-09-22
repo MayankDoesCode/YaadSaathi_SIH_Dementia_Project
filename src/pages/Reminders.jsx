@@ -9,7 +9,6 @@ import {
   Sun,
   Coffee,
   Clock,
-  Volume2,
   X,
   PhoneCall,
   AlertTriangle,
@@ -18,8 +17,6 @@ import {
   Edit2,
   Trash2,
   Play,
-  RotateCcw,
-  ShieldCheck,
   Info,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -30,19 +27,18 @@ export default function Reminders() {
   const {
     reminders,
     toggleReminder,
+    addReminder,
     sounds,
     voice,
     medicines,
     medicineHistory,
     confirmMedicineTaken,
-    snoozeMedicineReminder,
     addMedicine,
     updateMedicine,
     deleteMedicine,
     simulateTriggerReminder,
     simulateSnooze15,
     simulateEscalate60,
-    navigateTo,
   } = useApp();
 
   const { t, isHindi } = useI18n();
@@ -58,7 +54,7 @@ export default function Reminders() {
   const [newTitle, setNewTitle] = useState('');
   const [newTime, setNewTime] = useState('10:00 AM');
   const [newDesc, setNewDesc] = useState('');
-  const [newCategory, setNewCategory] = useState('medicine');
+  const [newCategory, setNewCategory] = useState('wellness');
 
   // Add / Edit Medicine Modal State
   const [medicineModalOpen, setMedicineModalOpen] = useState(false);
@@ -79,7 +75,6 @@ export default function Reminders() {
     if (activeFilter === 'evening') return rem.period === 'evening' || rem.period === 'night';
     return true;
   });
-  const completedRoutineCount = reminders.filter((r) => r.completed).length;
 
   // Medicine Metrics
   const totalMeds = medicines.length;
@@ -152,7 +147,6 @@ export default function Reminders() {
     e.preventDefault();
     if (!newTitle.trim()) return;
 
-    sounds.playSuccessChime();
     const newItem = {
       id: `custom-${Date.now()}`,
       time: newTime || '10:00 AM',
@@ -164,10 +158,11 @@ export default function Reminders() {
       category: newCategory,
       completed: false,
     };
-    reminders.push(newItem);
+    addReminder(newItem);
     setAddRoutineModalOpen(false);
     setNewTitle('');
     setNewDesc('');
+    setNewCategory('wellness');
     voice.speak('नई दिनचर्या सफलतापूर्वक जोड़ दी गई है।', 'New routine added successfully.');
   };
 

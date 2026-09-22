@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Footprints, Plus, RotateCcw, Calendar, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Plus, RotateCcw, Calendar, Sparkles } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useI18n } from '../i18n/I18nContext';
 import VoiceButton from './VoiceButton';

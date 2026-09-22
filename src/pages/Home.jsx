@@ -1,20 +1,10 @@
 import React from 'react';
 import {
-  Gamepad2,
   CalendarCheck,
-  TrendingUp,
   Heart,
   Sun,
   CheckCircle2,
-  ChevronRight,
-  Sparkles,
   ArrowRight,
-  Footprints,
-  Brain,
-  Star,
-  Smile,
-  Meh,
-  Frown,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useI18n } from '../i18n/I18nContext';
@@ -24,13 +14,11 @@ import SafeCircleCard from '../components/SafeCircleCard';
 
 export default function Home() {
   const {
-    patient,
     reminders,
     toggleReminder,
     todayMood,
     recordMood,
     navigateTo,
-    sounds,
     gameScores,
     stepsToday,
     stepsGoal,

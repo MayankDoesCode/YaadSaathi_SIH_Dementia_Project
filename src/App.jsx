@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { useApp } from './context/AppContext';
+import { useI18n } from './i18n/I18nContext';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Footer from './components/Footer';
@@ -7,21 +8,33 @@ import QuickSosModal from './components/QuickSosModal';
 import SplashScreen from './pages/SplashScreen';
 import LanguageSelection from './pages/LanguageSelection';
 
-// Screen imports
+// Home and Games Hub load eagerly (first screens most users see).
 import Home from './pages/Home';
 import GamesHub from './pages/GamesHub';
-import MemoryMatch from './pages/MemoryMatch';
-import PatternRecognition from './pages/PatternRecognition';
-import WordRecall from './pages/WordRecall';
-import PictureRecall from './pages/PictureRecall';
-import Reminders from './pages/Reminders';
-import MyProgress from './pages/MyProgress';
-import FamilyCaregiver from './pages/FamilyCaregiver';
-import Settings from './pages/Settings';
+
+// Heavier screens are code-split and lazy-loaded on first visit.
+const MemoryMatch = lazy(() => import('./pages/MemoryMatch'));
+const PatternRecognition = lazy(() => import('./pages/PatternRecognition'));
+const WordRecall = lazy(() => import('./pages/WordRecall'));
+const PictureRecall = lazy(() => import('./pages/PictureRecall'));
+const Reminders = lazy(() => import('./pages/Reminders'));
+const MyProgress = lazy(() => import('./pages/MyProgress'));
+const FamilyCaregiver = lazy(() => import('./pages/FamilyCaregiver'));
+const Settings = lazy(() => import('./pages/Settings'));
 
 import SaathiButton from './components/Saathi/SaathiButton';
 import SaathiPanel from './components/Saathi/SaathiPanel';
 import MedicineReminderModal from './components/MedicineReminderModal';
+
+function ScreenLoadingFallback() {
+  const { t } = useI18n();
+  return (
+    <div className="flex flex-col items-center justify-center py-24 gap-3 text-[#5D7184]">
+      <div className="w-10 h-10 border-4 border-[#DFF3E7] border-t-[#167A55] rounded-full animate-spin" aria-hidden="true" />
+      <p className="font-bold text-lg">{t('loadingGame')}</p>
+    </div>
+  );
+}
 
 export default function App() {
   const {
@@ -76,7 +89,7 @@ export default function App() {
 
         {/* Dynamic Page Container */}
         <main className="flex-1 w-full p-3 sm:p-6 lg:p-8 pb-28 xl:pb-12 max-w-6xl mx-auto">
-          {renderScreen()}
+          <Suspense fallback={<ScreenLoadingFallback />}>{renderScreen()}</Suspense>
         </main>
       </div>
 

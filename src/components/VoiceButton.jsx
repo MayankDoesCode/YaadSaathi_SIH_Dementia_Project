@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Loader2 } from 'lucide-react';
+import { Volume2, VolumeX } from 'lucide-react';
 import { useI18n } from '../i18n/I18nContext';
 import voiceService from '../services/voiceService';
 import { useSoundEffects } from '../hooks/useSoundEffects';
@@ -13,14 +13,12 @@ export default function VoiceButton({
   className = '',
   id,
 }) {
-  const { language, isHindi } = useI18n();
+  const { isHindi } = useI18n();
   const sounds = useSoundEffects();
   const [isSpeakingThis, setIsSpeakingThis] = useState(false);
-  const [globalSpeaking, setGlobalSpeaking] = useState(voiceService.isSpeaking);
 
   useEffect(() => {
     const unsubscribe = voiceService.subscribe((speaking) => {
-      setGlobalSpeaking(speaking);
       if (!speaking) {
         setIsSpeakingThis(false);
       }
@@ -75,7 +73,7 @@ export default function VoiceButton({
       id={id}
       onClick={handleClick}
       type="button"
-      aria-label={isSpeakingThis ? 'आवाज़ रोकें / Stop speaking' : 'बोलकर सुनाएं / Listen audio guidance'}
+      aria-label={isSpeakingThis ? (isHindi ? 'आवाज़ रोकें' : 'Stop speaking') : (isHindi ? 'बोलकर सुनाएं' : 'Listen audio guidance')}
       className={`tactile-btn inline-flex items-center justify-center font-black rounded-2xl transition-all cursor-pointer select-none ${
         isSpeakingThis
           ? 'bg-[#E8F3ED] border-2 border-[#167A55] text-[#167A55] ring-4 ring-[#DFF3E7] animate-pulse'

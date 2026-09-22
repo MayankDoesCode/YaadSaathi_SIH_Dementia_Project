@@ -17,7 +17,6 @@ export function SaathiProvider({ children }) {
   const {
     patient,
     medicines = [],
-    medicineHistory = [],
     activeMedicineReminder,
     confirmMedicineTaken,
     snoozeMedicineReminder,
@@ -29,11 +28,9 @@ export function SaathiProvider({ children }) {
     distanceFromHome,
     sounds,
     increaseFontSize,
-    decreaseFontSize,
-    resetFontSize,
   } = useApp();
 
-  const { isHindi, language } = useI18n();
+  const { isHindi } = useI18n();
 
   // Saathi States: 'IDLE' | 'LISTENING' | 'PROCESSING' | 'SPEAKING' | 'ERROR'
   const [status, setStatus] = useState('IDLE');

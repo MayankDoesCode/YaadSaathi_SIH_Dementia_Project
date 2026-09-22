@@ -1,33 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import {
-  RotateCcw,
-  Sparkles,
-  Trophy,
-  Clock,
-  Target,
-  Zap,
-  Volume2,
-  CheckCircle2,
-  HelpCircle,
-  Award,
-  History,
-  ArrowLeft,
-} from 'lucide-react';
+import { CheckCircle2, History } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useI18n } from '../i18n/I18nContext';
 import { MEMORY_CARDS_CATALOG } from '../data/mockData';
 import VoiceButton from '../components/VoiceButton';
-import { calculateAdaptiveDifficulty, DIFFICULTY_LABELS } from '../logic/adaptiveEngine';
+import GameTopBar from '../components/games/GameTopBar';
+import AdaptiveDifficultyCard from '../components/games/AdaptiveDifficultyCard';
+import GameCompletionActions from '../components/games/GameCompletionActions';
+import { DIFFICULTY_LABELS } from '../logic/adaptiveEngine';
+
+const THEME = { bg: '#FFE8EF', border: '#E84D78', text: '#E84D78', btnBg: '#E84D78', btnHover: '#D43B66', btnBorder: '#B82B53' };
 
 export default function MemoryMatch() {
   const {
     navigateTo,
     sounds,
     voice,
-    setGameScores,
     cognitiveDifficulty,
-    setCognitiveDifficulty,
+    recordGameResult,
+    patient,
   } = useApp();
+  const { t, isHindi } = useI18n();
+
+  const patientName = isHindi ? (patient.nameHindi || 'दामोदर जी') : (patient.nameEnglish || 'Damodar Ji');
 
   // Exactly 6 pairs (12 cards)
   const PAIR_COUNT = 6;
@@ -47,12 +43,11 @@ export default function MemoryMatch() {
   const lastTapTimeRef = useRef(null);
   const timerIntervalRef = useRef(null);
 
-  // Encouraging feedback state after every action
-  const [feedback, setFeedback] = useState({
-    type: 'neutral', // 'neutral', 'picking', 'matched', 'mismatch', 'won'
-    hindi: 'किसी भी कार्ड को छूकर खेल शुरू करें। कोई जल्दबाजी नहीं है!',
-    english: 'Tap any card to start the game. Take your time!',
-  });
+  // Encouraging feedback state after every action.
+  // Stores a translation key + the raw (untranslated) card data rather than
+  // pre-rendered text, so the message re-translates instantly if the user
+  // switches language mid-game instead of staying frozen in the old language.
+  const [feedback, setFeedback] = useState({ type: 'neutral', card: null });
 
   // Adaptive difficulty recommendation
   const [adaptiveResult, setAdaptiveResult] = useState(null);
@@ -85,6 +80,25 @@ export default function MemoryMatch() {
     const s = secs % 60;
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
+
+  // Resolve the current feedback message from its type/card, re-evaluated on every
+  // render so it always reflects the currently selected language.
+  const getFeedbackText = () => {
+    const itemName = feedback.card ? (isHindi ? feedback.card.nameHindi : feedback.card.nameEnglish) : '';
+    switch (feedback.type) {
+      case 'picking':
+        return t('memoryPickedCardMsg', { item: itemName });
+      case 'matched':
+        return t('memoryFoundPairMsg', { item: itemName });
+      case 'mismatch':
+        return t('memoryMismatchMsg');
+      case 'won':
+        return t('memoryGameWonMsg', { pairs: PAIR_COUNT });
+      default:
+        return t('memoryReadyToStart');
+    }
+  };
+  const feedbackText = getFeedbackText();
 
   // Compute metrics
   const matchesCount = matchedIds.length;
@@ -123,16 +137,13 @@ export default function MemoryMatch() {
     setAdaptiveResult(null);
     lastTapTimeRef.current = null;
 
-    setFeedback({
-      type: 'neutral',
-      hindi: 'कार्ड्स छुपा दिए गए हैं। किसी भी कार्ड को छूकर शुरुआत करें!',
-      english: 'Cards are hidden. Tap any card to begin!',
-    });
+    setFeedback({ type: 'neutral', card: null });
   };
 
   useEffect(() => {
     initializeGame();
     return () => clearInterval(timerIntervalRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Handle Card Tap
@@ -162,14 +173,10 @@ export default function MemoryMatch() {
 
     // Case 1: First card flipped
     if (newFlipped.length === 1) {
-      setFeedback({
-        type: 'picking',
-        hindi: `आपने "${clickedCard.nameHindi}" चुना। अब इसका साथी ढूंढें!`,
-        english: `You selected "${clickedCard.nameEnglish}". Now find its matching pair!`,
-      });
+      setFeedback({ type: 'picking', card: clickedCard });
       voice.speak(
-        `${clickedCard.nameHindi}। अब इसका दूसरा कार्ड ढूंढें।`,
-        `${clickedCard.nameEnglish}. Now find its matching card.`
+        t('memoryPickedCardSpeech', { item: clickedCard.nameHindi }),
+        t('memoryPickedCardSpeech', { item: clickedCard.nameEnglish })
       );
       return;
     }
@@ -199,11 +206,7 @@ export default function MemoryMatch() {
           setIsWon(true);
           setIsTimerRunning(false);
 
-          confetti({
-            particleCount: 90,
-            spread: 75,
-            origin: { y: 0.6 },
-          });
+          confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 } });
 
           const finalAttempts = attempts + 1;
           const finalAccuracy = Math.round((PAIR_COUNT / finalAttempts) * 100);
@@ -213,14 +216,15 @@ export default function MemoryMatch() {
               ? Number((responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length).toFixed(1))
               : 2.5;
 
-          // Adaptive Difficulty Engine
-          const adaptive = calculateAdaptiveDifficulty({
+          // Adaptive Difficulty Engine (smoothed across recent sessions)
+          const adaptive = recordGameResult({
+            game: 'memoryMatch',
             accuracy: finalAccuracy,
             averageResponseTime: finalAvgResp,
-            currentDifficulty: cognitiveDifficulty,
+            starsEarned: 2,
+            scoreUpdater: (prev) => ({ memoryMatchWins: (prev.memoryMatchWins || 0) + 1 }),
           });
           setAdaptiveResult(adaptive);
-          setCognitiveDifficulty(adaptive.nextDifficulty);
 
           // Save game result to localStorage
           const gameResult = {
@@ -254,44 +258,26 @@ export default function MemoryMatch() {
             console.warn('Could not save game history:', e);
           }
 
-          setGameScores((prev) => ({
-            ...prev,
-            memoryMatchWins: (prev.memoryMatchWins || 0) + 1,
-            totalStars: (prev.totalStars || 20) + 2,
-          }));
-
-          setFeedback({
-            type: 'won',
-            hindi: `अद्भुत! आपने सभी 6 जोड़ियां सफलतापूर्वक ढूंढ ली हैं! बधाई हो!`,
-            english: `Wonderful! You successfully matched all 6 pairs! Congratulations!`,
-          });
+          setFeedback({ type: 'won', card: null });
 
           voice.speak(
-            `अद्भुत दामोदर जी! आपने सभी 6 जोड़ियां सफलतापूर्वक पूरी कर ली हैं! बधाई हो!`,
-            `Splendid! You have successfully matched all 6 pairs! Congratulations!`
+            t('memoryGameWonSpeech', { name: patient.nameHindi || 'दामोदर जी', pairs: PAIR_COUNT }),
+            t('memoryGameWonSpeech', { name: patient.nameEnglish || 'Damodar Ji', pairs: PAIR_COUNT })
           );
         } else {
           // Individual match
-          setFeedback({
-            type: 'matched',
-            hindi: `वाह! बहुत सुंदर! ${firstCard.nameHindi} की सही जोड़ी मिल गई! 🌟`,
-            english: `Splendid! You found the matching pair of ${firstCard.nameEnglish}!`,
-          });
+          setFeedback({ type: 'matched', card: firstCard });
 
           voice.speak(
-            `वाह! ${firstCard.nameHindi} की जोड़ी मिल गई!`,
-            `Great! You matched ${firstCard.nameEnglish}!`
+            t('memoryFoundPairSpeech', { item: firstCard.nameHindi }),
+            t('memoryFoundPairSpeech', { item: firstCard.nameEnglish })
           );
         }
       } else {
         // MISMATCH -> Gentle feedback, hide after short delay
         sounds.playEncouragementChime();
 
-        setFeedback({
-          type: 'mismatch',
-          hindi: `कोई बात नहीं! दोनों चित्रों को मन में याद रखें, और फिर प्रयास करें 🌸`,
-          english: `No worries! Keep both cards in mind and try again!`,
-        });
+        setFeedback({ type: 'mismatch', card: null });
 
         setTimeout(() => {
           setFlippedIndices([]);
@@ -301,144 +287,86 @@ export default function MemoryMatch() {
     }
   };
 
+  const handleCardKeyDown = (event, index) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleCardTap(index);
+    }
+  };
+
   const handleListenRules = () => {
     sounds.playClickChime();
-    voice.speak(
-      'इन तस्वीरों में एक जैसी तस्वीर ढूंढिए। किसी भी दो कार्ड्स को छूकर खोलें। अगर दोनों एक जैसे हैं, तो वे खुले रहेंगे। 6 जोड़ियां खोजें।',
-      'Find matching pairs in these picture cards. Tap any two cards. If they match, they will stay open. Find all six pairs.'
-    );
+    voice.speak(t('memoryMatchRulesSpeech'), t('memoryMatchRulesSpeech'));
   };
 
   return (
     <div className="space-y-6 pb-12 animate-fade-in text-left">
-      {/* Back button to Games Hub */}
-      <button
-        onClick={() => navigateTo('games')}
-        className="tactile-btn inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white border-2 border-[#DFF3E7] text-[#102A43] font-bold text-base hover:bg-[#EAF7EF] cursor-pointer"
-      >
-        <ArrowLeft className="w-5 h-5 text-[#167A55]" />
-        <span>सभी खेलों पर वापस जाएं (Back to Games)</span>
-      </button>
+      <GameTopBar
+        icon="🌸"
+        title={t('memoryMatchPageTitle')}
+        tagline={t('memoryMatchTagline')}
+        subtitle={t('memoryMatchSubtitle')}
+        theme={THEME}
+        onBack={() => navigateTo('games')}
+        onListenRules={handleListenRules}
+        onRestart={initializeGame}
+      />
 
-      {/* 1. Header with Pink Theme Accent */}
-      <div className="bg-[#FFE8EF] rounded-[2.5rem] p-6 sm:p-8 border-3 border-[#E84D78]/40 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5 mb-1 flex-wrap">
-            <span className="text-4xl">🌸</span>
-            <h1 className="text-3xl sm:text-5xl font-black text-[#102A43]">
-              स्मृति मिलान खेल
-            </h1>
-            <span className="px-3.5 py-1 bg-white border-2 border-[#E84D78]/30 rounded-full font-black text-xs sm:text-sm text-[#E84D78]">
-              {DIFFICULTY_LABELS[cognitiveDifficulty]?.hi || `स्तर ${cognitiveDifficulty}`}
-            </span>
-          </div>
-          <p className="text-xl sm:text-2xl font-black text-[#E84D78]">
-            "इन तस्वीरों में एक जैसी तस्वीर ढूंढिए"
-          </p>
-          <p className="text-base sm:text-lg font-bold text-[#5D7184] mt-0.5">
-            Find matching pairs in these picture cards • Memory & Visual Recall
-          </p>
-        </div>
-
-        <div className="flex items-center flex-wrap gap-2.5">
-          <button
-            onClick={handleListenRules}
-            className="tactile-btn flex items-center gap-2 px-5 py-3 rounded-2xl bg-white hover:bg-[#FFE8EF] border-2 border-[#E84D78] text-[#E84D78] font-black text-lg min-h-[52px] cursor-pointer shadow-xs"
-          >
-            <Volume2 className="w-6 h-6 animate-pulse" />
-            <span>🔊 नियम सुनें (Listen Rules)</span>
-          </button>
-
-          <button
-            onClick={initializeGame}
-            className="tactile-btn flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#E84D78] hover:bg-[#D43B66] border-2 border-[#B82B53] text-white font-black text-lg min-h-[52px] cursor-pointer shadow-sm"
-          >
-            <RotateCcw className="w-6 h-6 stroke-[2.5]" />
-            <span>नया खेल (Restart)</span>
-          </button>
-        </div>
+      {/* Difficulty badge */}
+      <div className="flex justify-end -mt-3">
+        <span className="px-3.5 py-1 bg-white border-2 border-[#E84D78]/30 rounded-full font-black text-xs sm:text-sm text-[#E84D78]">
+          {isHindi ? DIFFICULTY_LABELS[cognitiveDifficulty]?.hi : DIFFICULTY_LABELS[cognitiveDifficulty]?.en}
+        </span>
       </div>
 
-      {/* 2. Pre-game Clear Instructions Banner */}
+      {/* Pre-game Clear Instructions Banner */}
       <div className="bg-white border-2 border-[#E84D78]/30 rounded-3xl p-5 sm:p-6 flex items-start gap-4 text-left shadow-xs">
-        <div className="w-12 h-12 rounded-2xl bg-[#FFE8EF] flex items-center justify-center shrink-0 text-2xl text-[#E84D78]">
+        <div className="w-12 h-12 rounded-2xl bg-[#FFE8EF] flex items-center justify-center shrink-0 text-2xl text-[#E84D78]" aria-hidden="true">
           💡
         </div>
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-[#102A43]">
-            खेलने का सरल तरीका (Simple Rules):
-          </h2>
-          <p className="text-base sm:text-xl font-bold text-[#5D7184] mt-1">
-            1. किसी भी दो कार्ड्स को छूकर खोलें।
-          </p>
-          <p className="text-base sm:text-xl font-bold text-[#5D7184]">
-            2. यदि दोनों चित्र एक जैसे हैं, तो वे खुले रहेंगे और आपको अंक मिलेंगे।
-          </p>
-          <p className="text-base sm:text-xl font-bold text-[#5D7184]">
-            3. यदि वे अलग हैं, तो वे छिप जाएंगे। कोई जल्दबाजी नहीं, शांति से खेलें!
-          </p>
+          <h2 className="text-xl sm:text-2xl font-black text-[#102A43]">{t('simpleRulesTitle')}:</h2>
+          <p className="text-base sm:text-xl font-bold text-[#5D7184] mt-1">1. {t('memoryMatchRule1')}</p>
+          <p className="text-base sm:text-xl font-bold text-[#5D7184]">2. {t('memoryMatchRule2')}</p>
+          <p className="text-base sm:text-xl font-bold text-[#5D7184]">3. {t('memoryMatchRule3')}</p>
         </div>
       </div>
 
-      {/* 3. Live Telemetry Tracker (High contrast pastel cards) */}
+      {/* Live Telemetry Tracker */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
-        {/* Matches */}
         <div className="bg-[#FFE8EF]/60 rounded-3xl p-4 border-2 border-[#E84D78]/30 text-center">
-          <span className="text-xs sm:text-sm font-bold text-[#5D7184] block">
-            जोड़ियां (Matches)
-          </span>
+          <span className="text-xs sm:text-sm font-bold text-[#5D7184] block">{t('matchesLabel')}</span>
           <span className="text-3xl sm:text-4xl font-black text-[#E84D78] block mt-0.5">
             {matchesCount} / {PAIR_COUNT}
           </span>
-          <span className="text-xs font-bold text-[#E84D78]">सफल मिलान</span>
         </div>
 
-        {/* Attempts */}
         <div className="bg-white rounded-3xl p-4 border-2 border-[#DFF3E7] text-center">
-          <span className="text-xs sm:text-sm font-bold text-[#5D7184] block">
-            कुल प्रयास (Attempts)
-          </span>
-          <span className="text-3xl sm:text-4xl font-black text-[#102A43] block mt-0.5">
-            {attempts}
-          </span>
-          <span className="text-xs font-semibold text-[#5D7184]">बार खोले</span>
+          <span className="text-xs sm:text-sm font-bold text-[#5D7184] block">{t('attemptsLabel')}</span>
+          <span className="text-3xl sm:text-4xl font-black text-[#102A43] block mt-0.5">{attempts}</span>
         </div>
 
-        {/* Accuracy */}
         <div className="bg-[#EAF7EF] rounded-3xl p-4 border-2 border-[#167A55]/30 text-center">
-          <span className="text-xs sm:text-sm font-bold text-[#5D7184] block">
-            सटीकता (Accuracy)
-          </span>
-          <span className="text-3xl sm:text-4xl font-black text-[#167A55] block mt-0.5">
-            {accuracyPercent}%
-          </span>
-          <span className="text-xs font-bold text-[#167A55]">शुद्धता दर</span>
+          <span className="text-xs sm:text-sm font-bold text-[#5D7184] block">{t('accuracyLabel')}</span>
+          <span className="text-3xl sm:text-4xl font-black text-[#167A55] block mt-0.5">{accuracyPercent}%</span>
         </div>
 
-        {/* Total Time */}
         <div className="bg-white rounded-3xl p-4 border-2 border-[#DFF3E7] text-center">
-          <span className="text-xs sm:text-sm font-bold text-[#5D7184] block">
-            कुल समय (Time)
-          </span>
+          <span className="text-xs sm:text-sm font-bold text-[#5D7184] block">{t('totalTimeLabel')}</span>
           <span className="text-3xl sm:text-4xl font-mono font-black text-[#102A43] block mt-0.5">
             {formatTime(totalSeconds)}
           </span>
-          <span className="text-xs font-semibold text-[#5D7184]">मिनट : सेकंड</span>
         </div>
 
-        {/* Response Time */}
         <div className="bg-[#FFF0D7] rounded-3xl p-4 border-2 border-[#E98A20]/30 text-center col-span-2 sm:col-span-1">
-          <span className="text-xs sm:text-sm font-bold text-[#5D7184] block">
-            प्रतिक्रिया गति (Speed)
-          </span>
+          <span className="text-xs sm:text-sm font-bold text-[#5D7184] block">{t('speedLabel')}</span>
           <span className="text-3xl sm:text-4xl font-mono font-black text-[#E98A20] block mt-0.5">
             {avgResponseTime}s
           </span>
-          <span className="text-xs font-bold text-[#E98A20]">औसत प्रति चाल</span>
         </div>
       </div>
 
-      {/* 4. Encouraging Feedback Banner */}
+      {/* Encouraging Feedback Banner */}
       <div
         className={`p-4 sm:p-6 rounded-3xl border-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm transition-all ${
           feedback.type === 'matched'
@@ -451,9 +379,11 @@ export default function MemoryMatch() {
             ? 'bg-[#E6F1FF] border-[#2879D0] text-[#102A43]'
             : 'bg-white border-[#DFF3E7] text-[#102A43]'
         }`}
+        role="status"
+        aria-live="polite"
       >
         <div className="flex items-center gap-3.5">
-          <span className="text-4xl">
+          <span className="text-4xl" aria-hidden="true">
             {feedback.type === 'matched'
               ? '🌟'
               : feedback.type === 'mismatch'
@@ -464,170 +394,90 @@ export default function MemoryMatch() {
               ? '🔍'
               : '🌸'}
           </span>
-          <div>
-            <p className="text-2xl sm:text-3xl font-black leading-snug">
-              {feedback.hindi}
-            </p>
-            <p className="text-base sm:text-lg font-bold opacity-80 mt-0.5">
-              {feedback.english}
-            </p>
-          </div>
+          <p className="text-xl sm:text-2xl font-black leading-snug">{feedbackText}</p>
         </div>
 
-        <VoiceButton
-          textHindi={feedback.hindi}
-          textEnglish={feedback.english}
-          size="sm"
-          label=""
-          className="self-end sm:self-center shrink-0"
-        />
+        <VoiceButton text={feedbackText} size="sm" label="" className="self-end sm:self-center shrink-0" />
       </div>
 
-      {/* 5. End Celebration & Final Scorecard Modal */}
+      {/* End Celebration & Final Scorecard */}
       {isWon && (
         <div className="bg-[#FFE8EF] border-4 border-[#E84D78] rounded-[2.5rem] p-6 sm:p-10 text-center shadow-xl animate-slow-fade">
-          <div className="inline-block p-4 bg-white rounded-full mb-3 text-5xl sm:text-6xl shadow-sm">
-            🏆
-          </div>
+          <div className="inline-block p-4 bg-white rounded-full mb-3 text-5xl sm:text-6xl shadow-sm" aria-hidden="true">🏆</div>
           <h2 className="text-3xl sm:text-5xl font-black text-[#102A43]">
-            बधाई हो दामोदर जी! खेल संपन्न हुआ!
+            {t('memoryCompleteTitle', { name: patientName })}
           </h2>
           <p className="mt-2 text-xl sm:text-2xl font-black text-[#E84D78]">
-            Congratulations! All 6 matching pairs found!
+            {t('memoryCompleteSub', { pairs: PAIR_COUNT })}
           </p>
 
-          {/* Star Rating */}
-          <div className="my-5 flex items-center justify-center gap-3 text-4xl sm:text-5xl text-amber-500">
-            <span>⭐</span>
-            <span>⭐</span>
-            <span>⭐</span>
+          <div className="my-5 flex items-center justify-center gap-3 text-4xl sm:text-5xl text-amber-500" aria-hidden="true">
+            <span>⭐</span><span>⭐</span><span>⭐</span>
           </div>
 
-          {/* Final Scorecard Grid */}
           <div className="max-w-xl mx-auto my-6 grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
             <div className="bg-white p-3.5 rounded-2xl border-2 border-[#FFE8EF]">
-              <span className="text-xs font-bold text-[#5D7184] block">कुल समय</span>
-              <span className="text-2xl font-mono font-black text-[#102A43] block">
-                {formatTime(totalSeconds)}
-              </span>
+              <span className="text-xs font-bold text-[#5D7184] block">{t('totalTimeLabel')}</span>
+              <span className="text-2xl font-mono font-black text-[#102A43] block">{formatTime(totalSeconds)}</span>
             </div>
             <div className="bg-white p-3.5 rounded-2xl border-2 border-[#FFE8EF]">
-              <span className="text-xs font-bold text-[#5D7184] block">प्रयास</span>
-              <span className="text-2xl font-black text-[#102A43] block">{attempts} बार</span>
+              <span className="text-xs font-bold text-[#5D7184] block">{t('attemptsLabel')}</span>
+              <span className="text-2xl font-black text-[#102A43] block">{attempts}</span>
             </div>
             <div className="bg-white p-3.5 rounded-2xl border-2 border-[#FFE8EF]">
-              <span className="text-xs font-bold text-[#5D7184] block">सटीकता</span>
-              <span className="text-2xl font-black text-[#167A55] block">
-                {accuracyPercent}%
-              </span>
+              <span className="text-xs font-bold text-[#5D7184] block">{t('accuracyLabel')}</span>
+              <span className="text-2xl font-black text-[#167A55] block">{accuracyPercent}%</span>
             </div>
             <div className="bg-white p-3.5 rounded-2xl border-2 border-[#FFE8EF]">
-              <span className="text-xs font-bold text-[#5D7184] block">औसत गति</span>
-              <span className="text-2xl font-mono font-black text-[#E98A20] block">
-                {avgResponseTime}s
-              </span>
+              <span className="text-xs font-bold text-[#5D7184] block">{t('speedLabel')}</span>
+              <span className="text-2xl font-mono font-black text-[#E98A20] block">{avgResponseTime}s</span>
             </div>
           </div>
 
-          {/* Adaptive Difficulty Engine Recommendation Card */}
-          {adaptiveResult && (
-            <div className="max-w-xl mx-auto my-6 p-5 sm:p-6 rounded-3xl bg-white border-3 border-[#E84D78]/30 shadow-sm text-left">
-              <div className="flex items-center justify-between gap-2 flex-wrap pb-3 border-b-2 border-[#FFE8EF]">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-3xl">🧠</span>
-                  <div>
-                    <h3 className="text-xl sm:text-2xl font-black text-[#102A43] leading-tight">
-                      अनुकूली कठिनाई प्रणाली (Adaptive Engine)
-                    </h3>
-                    <p className="text-xs text-[#5D7184] font-bold">
-                      स्मृति व गति के आधार पर स्वतः समायोजन
-                    </p>
-                  </div>
-                </div>
-                <span className="px-3 py-1.5 rounded-xl font-black text-sm border-2 bg-[#FFE8EF] border-[#E84D78] text-[#E84D78]">
-                  अगला स्तर: {adaptiveResult.nextDifficulty} / 5
-                </span>
-              </div>
+          <AdaptiveDifficultyCard adaptiveResult={adaptiveResult} accuracyPercent={accuracyPercent} avgResponseTime={avgResponseTime} />
 
-              <div className="mt-4 space-y-1">
-                <p className="text-xl sm:text-2xl font-black text-[#102A43] leading-snug">
-                  "{adaptiveResult.reasonHindi}"
-                </p>
-                <p className="text-base sm:text-lg font-bold text-[#5D7184]">
-                  "{adaptiveResult.reason}"
-                </p>
-              </div>
+          <p className="text-sm font-semibold text-[#167A55] mb-6">✓ {t('resultsSavedNote')}</p>
 
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
-                <span className="text-xs sm:text-sm font-bold text-[#5D7184]">
-                  सटीकता: {accuracyPercent}% • प्रतिक्रिया: {avgResponseTime}s
-                </span>
-                <VoiceButton
-                  textHindi={adaptiveResult.reasonHindi}
-                  textEnglish={adaptiveResult.reason}
-                  size="sm"
-                  label="सिफारिश सुनें"
-                />
-              </div>
-            </div>
-          )}
-
-          <p className="text-sm font-semibold text-[#167A55] mb-6">
-            ✓ यह परिणाम आपकी प्रगति (localStorage) में सुरक्षित कर लिया गया है।
-          </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-4">
-            <button
-              onClick={initializeGame}
-              className="tactile-btn px-8 py-4 sm:py-5 rounded-2xl bg-[#E84D78] hover:bg-[#D43B66] border-2 border-[#B82B53] text-white font-black text-xl sm:text-2xl flex items-center gap-3 shadow-lg cursor-pointer"
-            >
-              <RotateCcw className="w-7 h-7 stroke-[3]" />
-              <span>फिर से खेलें (Play Again)</span>
-            </button>
-
-            <button
-              onClick={() => navigateTo('games')}
-              className="tactile-btn px-6 py-4 sm:py-5 rounded-2xl bg-white hover:bg-[#FBFAF4] border-2 border-[#DFF3E7] text-[#102A43] font-black text-xl cursor-pointer"
-            >
-              अन्य खेल देखें (Other Games)
-            </button>
-          </div>
+          <GameCompletionActions onPlayAgain={initializeGame} onOtherGames={() => navigateTo('games')} theme={THEME} />
         </div>
       )}
 
-      {/* 6. 12 Cards Grid (Pink Theme Card Back with Floral Memory Motif) */}
+      {/* Cards Grid */}
       <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 sm:gap-5 max-w-4xl mx-auto pt-2">
         {cards.map((card, idx) => {
           const isFlipped = flippedIndices.includes(idx);
           const isMatched = matchedIds.includes(card.id);
           const isOpen = isFlipped || isMatched;
+          const itemName = isHindi ? card.nameHindi : card.nameEnglish;
 
           return (
-            <div
+            <button
+              type="button"
               key={card.uniqueId}
               onClick={() => handleCardTap(idx)}
-              className="h-36 sm:h-44 perspective-1000 cursor-pointer select-none"
-              aria-label={isOpen ? card.nameHindi : 'छिपा हुआ कार्ड'}
+              onKeyDown={(e) => handleCardKeyDown(e, idx)}
+              disabled={isProcessing && !isOpen}
+              aria-pressed={isOpen}
+              aria-label={isOpen ? `${itemName}${isMatched ? `, ${t('matchedLabel')}` : ''}` : t('hiddenCardLabel')}
+              className="h-36 sm:h-44 perspective-1000 cursor-pointer select-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E84D78] rounded-3xl"
             >
               <div
                 className={`relative w-full h-full duration-300 transform-style-3d rounded-3xl tactile-btn ${
                   isOpen ? 'rotate-y-180' : ''
                 }`}
               >
-                {/* Back of Card (Face Down) - Warm Rose Pink with Lotus / Leaf Motif */}
+                {/* Back of Card (Face Down) */}
                 <div
                   className={`absolute inset-0 backface-hidden rounded-3xl border-4 border-[#E84D78] bg-gradient-to-br from-[#E84D78] to-[#C9335E] flex flex-col items-center justify-center shadow-md p-2 hover:brightness-105 ${
                     isProcessing ? 'pointer-events-none' : ''
                   }`}
                 >
-                  <span className="text-4xl sm:text-5xl opacity-90 drop-shadow">🌸</span>
-                  <span className="mt-1 text-sm sm:text-base font-black text-white uppercase tracking-wider">
-                    यादसाथी
-                  </span>
-                  <span className="text-xs font-bold text-pink-100">छूकर खोलें</span>
+                  <span className="text-4xl sm:text-5xl opacity-90 drop-shadow" aria-hidden="true">🌸</span>
+                  <span className="mt-1 text-sm sm:text-base font-black text-white uppercase tracking-wider">यादसाथी</span>
+                  <span className="text-xs font-bold text-pink-100">{t('tapToOpenLabel')}</span>
                 </div>
 
-                {/* Front of Card (Face Up / Revealed) - Soft Pastel Ivory/Pink */}
+                {/* Front of Card (Face Up / Revealed) */}
                 <div
                   className={`absolute inset-0 backface-hidden rotate-y-180 rounded-3xl border-4 flex flex-col items-center justify-center p-2 sm:p-3 shadow-md ${
                     isMatched
@@ -635,36 +485,27 @@ export default function MemoryMatch() {
                       : 'bg-white border-[#E84D78]/40 text-[#102A43]'
                   }`}
                 >
-                  <span className="text-5xl sm:text-6xl filter drop-shadow-sm">
-                    {card.emoji}
-                  </span>
-                  <p className="mt-1 text-base sm:text-xl font-black text-center leading-tight">
-                    {card.nameHindi}
-                  </p>
-                  <p className="text-xs sm:text-sm font-bold text-[#5D7184] text-center">
-                    {card.nameEnglish}
-                  </p>
+                  <span className="text-5xl sm:text-6xl filter drop-shadow-sm" aria-hidden="true">{card.emoji}</span>
+                  <p className="mt-1 text-base sm:text-xl font-black text-center leading-tight">{itemName}</p>
 
                   {isMatched && (
-                    <div className="absolute top-2 right-2 text-[#167A55] bg-white rounded-full p-1 shadow-sm">
+                    <div className="absolute top-2 right-2 text-[#167A55] bg-white rounded-full p-1 shadow-sm" aria-hidden="true">
                       <CheckCircle2 className="w-5 h-5 fill-[#DFF3E7]" />
                     </div>
                   )}
                 </div>
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
 
-      {/* 7. Past Game History (Loaded from localStorage) */}
+      {/* Past Game History */}
       {pastGames.length > 0 && (
         <div className="mt-8 bg-white rounded-3xl p-5 sm:p-6 border-2 border-[#DFF3E7] shadow-xs">
           <div className="flex items-center gap-2.5 mb-3">
-            <History className="w-6 h-6 text-[#E84D78]" />
-            <h2 className="text-xl sm:text-2xl font-black text-[#102A43]">
-              पिछली खेल प्रगति (Past Game Results):
-            </h2>
+            <History className="w-6 h-6 text-[#E84D78]" aria-hidden="true" />
+            <h2 className="text-xl sm:text-2xl font-black text-[#102A43]">{t('pastResultsTitle')}:</h2>
           </div>
 
           <div className="space-y-2.5">
@@ -674,12 +515,10 @@ export default function MemoryMatch() {
                 className="p-3.5 rounded-2xl bg-[#FBFAF4] border border-[#DFF3E7] flex flex-wrap items-center justify-between gap-2 text-sm sm:text-base font-bold text-[#102A43]"
               >
                 <span>📅 {g.date}</span>
-                <span>⏱️ समय: {g.formattedTime}</span>
-                <span>🎯 प्रयास: {g.attempts}</span>
-                <span className="text-[#167A55] font-black">
-                  📊 सटीकता: {g.accuracy}%
-                </span>
-                <span className="text-[#E98A20] font-black">⚡ गति: {g.avgResponseTime}s</span>
+                <span>⏱️ {t('totalTimeLabel')}: {g.formattedTime}</span>
+                <span>🎯 {t('attemptsLabel')}: {g.attempts}</span>
+                <span className="text-[#167A55] font-black">📊 {t('accuracyLabel')}: {g.accuracy}%</span>
+                <span className="text-[#E98A20] font-black">⚡ {t('speedLabel')}: {g.avgResponseTime}s</span>
               </div>
             ))}
           </div>
@@ -688,4 +527,3 @@ export default function MemoryMatch() {
     </div>
   );
 }
-
