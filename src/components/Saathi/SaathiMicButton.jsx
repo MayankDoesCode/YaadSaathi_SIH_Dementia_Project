@@ -9,8 +9,8 @@ import { useSaathi } from '../../context/SaathiContext';
 import { useI18n } from '../../i18n/I18nContext';
 
 export default function SaathiMicButton({ className = '' }) {
-  const { status, startListening, stopListening, isMicAvailable } = useSaathi();
-  const { t, isHindi } = useI18n();
+  const { status, startListening, stopListening } = useSaathi();
+  const { isHindi } = useI18n();
 
   const isListening = status === 'LISTENING';
   const isProcessing = status === 'PROCESSING';

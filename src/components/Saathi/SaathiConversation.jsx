@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useRef } from 'react';
-import { Volume2, User, Sparkles } from 'lucide-react';
+import { Volume2 } from 'lucide-react';
 import { useSaathi } from '../../context/SaathiContext';
 import { useI18n } from '../../i18n/I18nContext';
 import saathiVoiceService from '../../services/saathiVoiceService';
@@ -63,7 +63,7 @@ export default function SaathiConversation() {
                   <button
                     onClick={() => handleReplaySpeech(msg.text)}
                     className="tactile-btn px-2.5 py-1 rounded-xl bg-[#EAF7EF] hover:bg-[#DFF3E7] text-[#167A55] text-xs font-black flex items-center gap-1.5 cursor-pointer"
-                    aria-label="Re-listen to Saathi's message"
+                    aria-label={isHindi ? 'संदेश फिर से सुनें' : "Re-listen to Saathi's message"}
                   >
                     <Volume2 className="w-3.5 h-3.5" />
                     <span>{isHindi ? 'दोबारा सुनें' : 'Listen again'}</span>

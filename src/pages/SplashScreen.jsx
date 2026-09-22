@@ -1,6 +1,6 @@
 import React from 'react';
 import Logo from '../components/Logo';
-import { Volume2, ArrowRight, Heart, Sparkles } from 'lucide-react';
+import { Volume2, ArrowRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function SplashScreen() {

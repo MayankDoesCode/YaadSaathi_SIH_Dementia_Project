@@ -1,20 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Settings as SettingsIcon,
   Type,
   Globe,
   Volume2,
-  Bell,
   User,
   RotateCcw,
   CheckCircle2,
-  Plus,
-  Minus,
   Wifi,
-  Sparkles,
-  Eye,
 } from 'lucide-react';
-import { useApp, FONT_SCALES } from '../context/AppContext';
+import { useApp } from '../context/AppContext';
 import { useI18n } from '../i18n/I18nContext';
 import VoiceButton from '../components/VoiceButton';
 import voiceService from '../services/voiceService';
@@ -23,9 +18,6 @@ export default function Settings() {
   const {
     fontScale,
     setFontScale,
-    decreaseFontSize,
-    resetFontSize,
-    increaseFontSize,
     patient,
     setPatient,
     resetAllData,
@@ -35,20 +27,28 @@ export default function Settings() {
   const { t, language, setLanguage, isHindi } = useI18n();
 
   const [nameInput, setNameInput] = useState(patient.nameHindi);
+  const [nameEnglishInput, setNameEnglishInput] = useState(patient.nameEnglish);
   const [nameSaved, setNameSaved] = useState(false);
+
+  // Keep the input in sync if the patient profile changes elsewhere (e.g. Reset Demo Data)
+  useEffect(() => {
+    setNameInput(patient.nameHindi);
+    setNameEnglishInput(patient.nameEnglish);
+  }, [patient.nameHindi, patient.nameEnglish]);
 
   const handleSaveName = (e) => {
     e.preventDefault();
-    if (!nameInput.trim()) return;
+    if (!nameInput.trim() || !nameEnglishInput.trim()) return;
 
     sounds.playSuccessChime();
     setPatient((prev) => ({
       ...prev,
       nameHindi: nameInput,
+      nameEnglish: nameEnglishInput,
     }));
     setNameSaved(true);
     voiceService.speak(
-      isHindi ? `नाम सुरक्षित कर लिया गया है: ${nameInput}` : `Name saved: ${nameInput}`,
+      isHindi ? `नाम सुरक्षित कर लिया गया है: ${nameInput}` : `Name saved: ${nameEnglishInput}`,
       isHindi ? 'hi-IN' : 'en-IN'
     );
     setTimeout(() => setNameSaved(false), 2500);
@@ -120,7 +120,8 @@ export default function Settings() {
                 sounds.playClickChime();
                 setFontScale(item.scale);
               }}
-              className={`tactile-btn p-4 rounded-2xl border-3 font-black text-lg flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${
+              aria-pressed={Math.abs(fontScale - item.scale) < 0.01}
+              className={`tactile-btn p-4 rounded-2xl border-3 font-black text-lg flex flex-col items-center justify-center gap-1 cursor-pointer transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
                 Math.abs(fontScale - item.scale) < 0.01
                   ? 'bg-[#167A55] border-[#0D4E36] text-white ring-4 ring-[#DFF3E7]'
                   : 'bg-[#FBFAF4] hover:bg-[#EAF7EF] border-[#DFF3E7] text-[#102A43]'
@@ -156,7 +157,8 @@ export default function Settings() {
               sounds.playClickChime();
               setLanguage('hi');
             }}
-            className={`tactile-btn p-5 rounded-2xl border-4 text-left cursor-pointer transition-all ${
+            aria-pressed={language === 'hi'}
+            className={`tactile-btn p-5 rounded-2xl border-4 text-left cursor-pointer transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
               language === 'hi'
                 ? 'bg-[#EAF7EF] border-[#167A55] text-[#167A55] ring-4 ring-[#DFF3E7]'
                 : 'bg-[#FBFAF4] hover:bg-[#EAF7EF] border-[#E2E8F0] text-[#102A43]'
@@ -174,7 +176,8 @@ export default function Settings() {
               sounds.playClickChime();
               setLanguage('en');
             }}
-            className={`tactile-btn p-5 rounded-2xl border-4 text-left cursor-pointer transition-all ${
+            aria-pressed={language === 'en'}
+            className={`tactile-btn p-5 rounded-2xl border-4 text-left cursor-pointer transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
               language === 'en'
                 ? 'bg-[#EAF7EF] border-[#167A55] text-[#167A55] ring-4 ring-[#DFF3E7]'
                 : 'bg-[#FBFAF4] hover:bg-[#EAF7EF] border-[#E2E8F0] text-[#102A43]'
@@ -246,17 +249,31 @@ export default function Settings() {
           </div>
         </div>
 
-        <form onSubmit={handleSaveName} className="flex flex-col sm:flex-row gap-3 max-w-xl">
-          <input
-            type="text"
-            value={nameInput}
-            onChange={(e) => setNameInput(e.target.value)}
-            className="flex-1 px-5 py-3.5 rounded-2xl border-2 border-[#DFF3E7] text-xl font-black text-[#102A43] bg-[#FBFAF4] focus:outline-none focus:border-[#167A55]"
-          />
+        <form onSubmit={handleSaveName} className="space-y-3 max-w-xl">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <label className="flex-1 space-y-1">
+              <span className="block text-xs font-black text-[#5D7184]">{isHindi ? 'नाम (हिन्दी)' : 'Name (Hindi)'}</span>
+              <input
+                type="text"
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                className="w-full px-5 py-3.5 rounded-2xl border-2 border-[#DFF3E7] text-xl font-black text-[#102A43] bg-[#FBFAF4] focus:outline-none focus:border-[#167A55]"
+              />
+            </label>
+            <label className="flex-1 space-y-1">
+              <span className="block text-xs font-black text-[#5D7184]">{isHindi ? 'नाम (English)' : 'Name (English)'}</span>
+              <input
+                type="text"
+                value={nameEnglishInput}
+                onChange={(e) => setNameEnglishInput(e.target.value)}
+                className="w-full px-5 py-3.5 rounded-2xl border-2 border-[#DFF3E7] text-xl font-black text-[#102A43] bg-[#FBFAF4] focus:outline-none focus:border-[#167A55]"
+              />
+            </label>
+          </div>
 
           <button
             type="submit"
-            className="tactile-btn px-8 py-3.5 rounded-2xl bg-[#167A55] hover:bg-[#115C40] border-2 border-[#0D4E36] text-white font-black text-lg cursor-pointer shadow-sm"
+            className="tactile-btn px-8 py-3.5 rounded-2xl bg-[#167A55] hover:bg-[#115C40] border-2 border-[#0D4E36] text-white font-black text-lg cursor-pointer shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
           >
             {isHindi ? 'सुरक्षित करें' : 'Save'}
           </button>

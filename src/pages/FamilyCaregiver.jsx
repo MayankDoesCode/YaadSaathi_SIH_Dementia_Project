@@ -4,21 +4,12 @@ import {
   PhoneCall,
   MapPin,
   ShieldCheck,
-  ShieldAlert,
-  UserCheck,
   Mic,
   CheckCircle2,
-  Home,
-  Clock,
-  Sparkles,
   AlertTriangle,
   Info,
-  ExternalLink,
-  Radio,
   Pill,
-  Bell,
   X,
-  CalendarCheck,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useI18n } from '../i18n/I18nContext';
@@ -40,7 +31,6 @@ export default function FamilyCaregiver() {
     medicines = [],
     caregiverMedicineAlerts = [],
     dismissCaregiverAlert,
-    medicineHistory = [],
   } = useApp();
 
   const { t, isHindi } = useI18n();
@@ -56,7 +46,7 @@ export default function FamilyCaregiver() {
   const isApproaching = safeZoneStatus === 'APPROACHING';
   const isOutside = safeZoneStatus === 'OUTSIDE_SAFE_ZONE';
 
-  const handleSimulateCall = (name, phone) => {
+  const handleSimulateCall = (name) => {
     sounds.playSuccessChime();
     voice.speak(
       `${name} को कॉल मिलाई जा रही है। कृपया प्रतीक्षा करें।`,
@@ -109,7 +99,7 @@ export default function FamilyCaregiver() {
         <Info className="w-6 h-6 text-[#167A55] shrink-0 mt-0.5" />
         <div className="text-xs sm:text-sm font-semibold text-[#5D7184] leading-relaxed">
           <strong className="text-[#102A43] font-black block text-sm sm:text-base">
-            गैर-चिकित्सकीय सहभागिता सूचना (Non-Clinical Reassurance Notice):
+            {isHindi ? 'गैर-चिकित्सकीय सहभागिता सूचना:' : 'Non-Clinical Reassurance Notice:'}
           </strong>
           {isHindi
             ? 'यह प्रणाली देखभालकर्ता जागरूकता और भावनात्मक संबल के लिए है। यह आपातकालीन चिकित्सा या पुलिस रेस्पॉन्स का दावा नहीं करती है।'
@@ -217,7 +207,7 @@ export default function FamilyCaregiver() {
             <AlertTriangle className="w-8 h-8 text-[#E84D78] shrink-0 mt-1" />
             <div>
               <span className="inline-block px-3 py-0.5 rounded-full bg-[#E84D78] text-white font-black text-xs uppercase tracking-wider mb-1">
-                ⚠️ Safe Zone Alert
+                ⚠️ {t('outsideSafeZone')}
               </span>
               <h3 className="text-xl sm:text-2xl font-black text-[#102A43]">
                 {t('safeZoneAlertDesc')}
@@ -226,7 +216,7 @@ export default function FamilyCaregiver() {
                 {t('lastUpdated')}: {userLocation?.lastUpdated} • {t('distanceFromHome', { dist: distanceFromHome })}
               </p>
               <p className="text-xs sm:text-sm font-semibold text-[#E84D78] mt-1">
-                वर्तमान पता: {userLocation?.address}
+                {isHindi ? 'वर्तमान पता' : 'Current address'}: {userLocation?.address}
               </p>
             </div>
           </div>
@@ -274,15 +264,15 @@ export default function FamilyCaregiver() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xl sm:text-2xl font-black text-[#102A43]">
-                  SafeCircle • {patient.nameHindi} ({patient.nameEnglish})
+                  SafeCircle • {isHindi ? patient.nameHindi : patient.nameEnglish}
                 </span>
               </div>
 
               <div className="flex items-center gap-2 mt-1 flex-wrap">
-                <span className="font-black text-sm text-[#5D7184]">{t('safeZone')} Status:</span>
+                <span className="font-black text-sm text-[#5D7184]">{t('safeZone')}:</span>
                 {!locationSharing ? (
                   <span className="px-3 py-0.5 rounded-full bg-slate-100 text-slate-600 font-black text-xs uppercase">
-                    ⚪ Sharing Paused
+                    ⚪ {isHindi ? 'साझा करना रुका है' : 'Sharing Paused'}
                   </span>
                 ) : isSafe ? (
                   <span className="px-3 py-0.5 rounded-full bg-[#EAF7EF] text-[#167A55] border border-[#167A55]/30 font-black text-xs uppercase flex items-center gap-1.5">
@@ -315,7 +305,7 @@ export default function FamilyCaregiver() {
 
             <button
               id="family-call-damodar-btn"
-              onClick={() => handleSimulateCall('दामोदर शर्मा जी', '+91 98765 43210')}
+              onClick={() => handleSimulateCall(isHindi ? patient.nameHindi : patient.nameEnglish, patient.emergencyContact?.phone)}
               className="tactile-btn px-5 py-3 rounded-2xl bg-white hover:bg-[#FBFAF4] border-2 border-[#167A55] text-[#167A55] font-black text-base flex items-center gap-2 cursor-pointer"
             >
               <PhoneCall className="w-5 h-5 stroke-[2.5]" />
@@ -433,7 +423,7 @@ export default function FamilyCaregiver() {
                   {isHindi ? 'प्रिया शर्मा (सुपुत्री)' : 'Priya Sharma (Daughter)'}
                 </h3>
                 <p className="text-base sm:text-lg font-bold text-[#5D7184]">
-                  फोन: +91 98765 43210
+                  {isHindi ? 'फोन' : 'Phone'}: +91 98765 43210
                 </p>
                 <p className="text-sm font-semibold text-[#5D7184] mt-1">
                   {isHindi ? 'दैनिक दिनचर्या और सहायता के लिए सदैव उपलब्ध' : 'Available for daily routine and reassurance.'}
@@ -441,7 +431,7 @@ export default function FamilyCaregiver() {
               </div>
 
               <button
-                onClick={() => handleSimulateCall('प्रिया शर्मा', '+91 98765 43210')}
+                onClick={() => handleSimulateCall(isHindi ? 'प्रिया शर्मा' : 'Priya Sharma')}
                 className="tactile-btn w-full py-4 rounded-2xl bg-[#E84D78] hover:bg-[#D43B66] border-2 border-[#B82B53] text-white font-black text-xl flex items-center justify-center gap-2 cursor-pointer shadow-sm"
               >
                 <PhoneCall className="w-6 h-6 stroke-[2.5]" />
@@ -459,7 +449,7 @@ export default function FamilyCaregiver() {
                   {isHindi ? 'रवि शर्मा (सुपुत्र)' : 'Ravi Sharma (Son)'}
                 </h3>
                 <p className="text-base sm:text-lg font-bold text-[#5D7184]">
-                  फोन: +91 98222 33445
+                  {isHindi ? 'फोन' : 'Phone'}: +91 98222 33445
                 </p>
                 <p className="text-sm font-semibold text-[#5D7184] mt-1">
                   {isHindi ? 'SafeCircle स्थान सूचनाएं प्राप्तकर्ता' : 'Receives SafeCircle zone notifications.'}
@@ -467,7 +457,7 @@ export default function FamilyCaregiver() {
               </div>
 
               <button
-                onClick={() => handleSimulateCall('रवि शर्मा', '+91 98222 33445')}
+                onClick={() => handleSimulateCall(isHindi ? 'रवि शर्मा' : 'Ravi Sharma')}
                 className="tactile-btn w-full py-4 rounded-2xl bg-[#2879D0] hover:bg-[#1E62A8] border-2 border-[#164F8B] text-white font-black text-xl flex items-center justify-center gap-2 cursor-pointer shadow-sm"
               >
                 <PhoneCall className="w-6 h-6 stroke-[2.5]" />
@@ -482,15 +472,15 @@ export default function FamilyCaregiver() {
                   {isHindi ? 'पारिवारिक डॉक्टर (Neurologist)' : 'Neurologist'}
                 </span>
                 <h3 className="text-2xl sm:text-3xl font-black text-[#102A43] mt-2">
-                  डॉ. राजेश मेहता (Dr. Rajesh Mehta)
+                  {isHindi ? 'डॉ. राजेश मेहता' : 'Dr. Rajesh Mehta'}
                 </h3>
                 <p className="text-base sm:text-lg font-bold text-[#5D7184]">
-                  अपोलो क्लिनिक (+91 98111 22334)
+                  {isHindi ? 'अपोलो क्लिनिक' : 'Apollo Clinic'} (+91 98111 22334)
                 </p>
               </div>
 
               <button
-                onClick={() => handleSimulateCall('डॉ. राजेश मेहता', '+91 98111 22334')}
+                onClick={() => handleSimulateCall(isHindi ? 'डॉ. राजेश मेहता' : 'Dr. Rajesh Mehta')}
                 className="tactile-btn w-full py-4 rounded-2xl bg-[#167A55] hover:bg-[#115C40] border-2 border-[#0D4E36] text-white font-black text-xl flex items-center justify-center gap-2 cursor-pointer shadow-sm"
               >
                 <PhoneCall className="w-6 h-6 stroke-[2.5]" />
@@ -508,12 +498,12 @@ export default function FamilyCaregiver() {
                   {isHindi ? 'राष्ट्रीय एम्बुलेंस (108)' : 'National Ambulance (108)'}
                 </h3>
                 <p className="text-base sm:text-lg font-bold text-[#5D7184]">
-                  डायल: 108 (अखिल भारतीय टोल फ्री)
+                  {isHindi ? 'डायल: 108 (अखिल भारतीय टोल फ्री)' : 'Dial: 108 (Pan-India Toll Free)'}
                 </p>
               </div>
 
               <button
-                onClick={() => handleSimulateCall('एम्बुलेंस 108', '108')}
+                onClick={() => handleSimulateCall(isHindi ? 'एम्बुलेंस 108' : 'Ambulance 108')}
                 className="tactile-btn w-full py-4 rounded-2xl bg-[#E84D78] hover:bg-[#D43B66] border-2 border-[#B82B53] text-white font-black text-xl flex items-center justify-center gap-2 cursor-pointer shadow-sm"
               >
                 <PhoneCall className="w-6 h-6 stroke-[2.5]" />
@@ -552,11 +542,11 @@ export default function FamilyCaregiver() {
                 </span>
                 <span className="text-3xl font-black text-[#167A55]">
                   {Math.round(
-                    (medicines.filter((m) => m.status === 'taken').length / (medicines.length || 1)) * 100
+                    (medicines.filter((m) => m.status === 'TAKEN').length / (medicines.length || 1)) * 100
                   )}%
                 </span>
                 <span className="text-xs font-bold text-[#5D7184] block mt-0.5">
-                  {medicines.filter((m) => m.status === 'taken').length}/{medicines.length} {isHindi ? 'पुष्टि' : 'Confirmed'}
+                  {medicines.filter((m) => m.status === 'TAKEN').length}/{medicines.length} {isHindi ? 'पुष्टि' : 'Confirmed'}
                 </span>
               </div>
             </div>
@@ -571,9 +561,9 @@ export default function FamilyCaregiver() {
           {/* Cards for each medicine */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {medicines.map((med) => {
-              const isTaken = med.status === 'taken';
-              const isPending = med.status === 'reminder_pending';
-              const isNotConfirmed = med.status === 'not_confirmed';
+              const isTaken = med.status === 'TAKEN';
+              const isPending = med.status === 'REMINDER_PENDING';
+              const isNotConfirmed = med.status === 'NOT_CONFIRMED';
 
               return (
                 <div
@@ -622,7 +612,7 @@ export default function FamilyCaregiver() {
                             🔴 {t('statusNotConfirmed')}
                           </span>
                         )}
-                        {med.status === 'scheduled' && (
+                        {med.status === 'SCHEDULED' && (
                           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-600 font-black text-xs uppercase border border-slate-300">
                             ⚪ {t('statusScheduled')}
                           </span>
@@ -714,7 +704,7 @@ export default function FamilyCaregiver() {
                       </div>
                     )}
 
-                    {med.status === 'scheduled' && (
+                    {med.status === 'SCHEDULED' && (
                       <div className="w-full py-2 rounded-xl bg-slate-100 text-slate-600 text-center font-bold text-xs">
                         ⏰ {isHindi ? `निर्धारित समय (${med.scheduledTime}) पर स्मरण होगा` : `Scheduled at ${med.scheduledTime}`}
                       </div>
@@ -738,10 +728,12 @@ export default function FamilyCaregiver() {
               </div>
               <div>
                 <h3 className="text-2xl font-black text-[#102A43]">
-                  दिवाली पूजा - सुपुत्री प्रिया व नातिन आरोही
+                  {isHindi ? 'दिवाली पूजा - सुपुत्री प्रिया व नातिन आरोही' : 'Diwali Puja - with daughter Priya & granddaughter Aarohi'}
                 </h3>
                 <p className="text-base sm:text-lg font-bold text-[#5D7184] mt-1">
-                  जयपुर - आंगन में सबने मिलकर दीये सजाए थे और मिठाई खाई थी।
+                  {isHindi
+                    ? 'जयपुर - आंगन में सबने मिलकर दीये सजाए थे और मिठाई खाई थी।'
+                    : 'Jaipur - the whole family lit diyas together in the courtyard and shared sweets.'}
                 </p>
               </div>
 
@@ -749,7 +741,7 @@ export default function FamilyCaregiver() {
                 textHindi="यह तस्वीर दिवाली की है। आपकी बेटी प्रिया और नातिन आरोही ने आपके साथ मिलकर आंगन में सुंदर दीये सजाए थे।"
                 textEnglish="This photo is from Diwali with daughter Priya and granddaughter Aarohi lighting diyas."
                 size="md"
-                label="याद की कहानी सुनें"
+                label={t('listen')}
                 className="w-full"
               />
             </div>
@@ -761,10 +753,12 @@ export default function FamilyCaregiver() {
               </div>
               <div>
                 <h3 className="text-2xl font-black text-[#102A43]">
-                  शाम की सैर व अदरक चाय - सेंट्रल पार्क
+                  {isHindi ? 'शाम की सैर व अदरक चाय - सेंट्रल पार्क' : 'Evening Walk & Ginger Tea - Central Park'}
                 </h3>
                 <p className="text-base sm:text-lg font-bold text-[#5D7184] mt-1">
-                  मित्रों के साथ ताज़ी हवा, हल्की सैर और चाय पर पुरानी बातें।
+                  {isHindi
+                    ? 'मित्रों के साथ ताज़ी हवा, हल्की सैर और चाय पर पुरानी बातें।'
+                    : 'Fresh air, a gentle walk, and old stories over tea with friends.'}
                 </p>
               </div>
 
@@ -772,7 +766,7 @@ export default function FamilyCaregiver() {
                 textHindi="यह सेंट्रल पार्क की सुखद शाम है जहाँ आप अपने मित्रों के साथ अदरक वाली चाय और धूप का आनंद लेते हैं।"
                 textEnglish="This is Central Park where you enjoy ginger tea and evening walks with friends."
                 size="md"
-                label="याद की कहानी सुनें"
+                label={t('listen')}
                 className="w-full"
               />
             </div>

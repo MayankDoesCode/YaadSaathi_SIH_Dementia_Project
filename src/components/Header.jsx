@@ -1,7 +1,6 @@
 import React from 'react';
 import Logo from './Logo';
 import {
-  Volume2,
   Settings as SettingsIcon,
   Heart,
   Globe,
@@ -23,7 +22,10 @@ export default function Header() {
     sounds,
   } = useApp();
 
-  const { t, language, toggleLanguage, isHindi } = useI18n();
+  const { t, toggleLanguage, isHindi } = useI18n();
+
+  const greetingHindi = `नमस्ते ${patient.nameHindi || 'दामोदर जी'}! आज हम साथ में कुछ अच्छा और नया करेंगे।`;
+  const greetingEnglish = `Good day ${patient.nameEnglish || 'Damodar Sharma Ji'}. Today is a new day to create a new memory.`;
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b-2 border-[#DFF3E7] shadow-sm">
@@ -41,8 +43,8 @@ export default function Header() {
         <div className="hidden md:flex items-center gap-2">
           <VoiceButton
             id="header-voice-btn"
-            textHindi="नमस्ते दामोदर जी! आज हम साथ में कुछ अच्छा और नया करेंगे।"
-            textEnglish="Good day Damodar Sharma Ji. Today is a new day to create a new memory."
+            textHindi={greetingHindi}
+            textEnglish={greetingEnglish}
             size="sm"
             label={t('listen')}
             className="shadow-xs"
@@ -58,44 +60,44 @@ export default function Header() {
           <div
             className="flex items-center bg-[#FBFAF4] border-2 border-[#DFF3E7] rounded-2xl p-1 gap-1"
             role="group"
-            aria-label="Font scale adjustment"
+            aria-label={isHindi ? 'अक्षर आकार समायोजन' : 'Font scale adjustment'}
           >
             <button
               id="font-scale-decrease-btn"
               onClick={decreaseFontSize}
-              className={`tactile-btn px-2.5 sm:px-3 py-1.5 rounded-xl font-black text-sm cursor-pointer transition-colors ${
+              aria-pressed={fontScale <= 0.90}
+              className={`tactile-btn px-2.5 sm:px-3 py-1.5 rounded-xl font-black text-sm cursor-pointer transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
                 fontScale <= 0.90
                   ? 'bg-[#167A55] text-white shadow-xs'
                   : 'bg-white text-[#102A43] hover:bg-[#EAF7EF]'
               }`}
-              title="सामान्य से छोटे अक्षर (A- 90%)"
-              aria-label="Decrease font size (A-)"
+              aria-label={isHindi ? 'छोटे अक्षर (A- 90%)' : 'Decrease font size (A-)'}
             >
               A-
             </button>
             <button
               id="font-scale-reset-btn"
               onClick={resetFontSize}
-              className={`tactile-btn px-2.5 sm:px-3 py-1.5 rounded-xl font-black text-sm cursor-pointer transition-colors ${
+              aria-pressed={fontScale === 1.00}
+              className={`tactile-btn px-2.5 sm:px-3 py-1.5 rounded-xl font-black text-sm cursor-pointer transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
                 fontScale === 1.00
                   ? 'bg-[#167A55] text-white shadow-xs'
                   : 'bg-white text-[#102A43] hover:bg-[#EAF7EF]'
               }`}
-              title="सामान्य अक्षर (A 100%)"
-              aria-label="Reset font size to 100% (A)"
+              aria-label={isHindi ? 'सामान्य अक्षर (A 100%)' : 'Reset font size to 100% (A)'}
             >
               A
             </button>
             <button
               id="font-scale-increase-btn"
               onClick={increaseFontSize}
-              className={`tactile-btn px-2.5 sm:px-3 py-1.5 rounded-xl font-black text-sm cursor-pointer transition-colors ${
+              aria-pressed={fontScale >= 1.15}
+              className={`tactile-btn px-2.5 sm:px-3 py-1.5 rounded-xl font-black text-sm cursor-pointer transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
                 fontScale >= 1.15
                   ? 'bg-[#167A55] text-white shadow-xs'
                   : 'bg-white text-[#102A43] hover:bg-[#EAF7EF]'
               }`}
-              title="बड़े अक्षर (A+ 115% / 130%)"
-              aria-label="Increase font size (A+)"
+              aria-label={isHindi ? 'बड़े अक्षर (A+ 115% / 130%)' : 'Increase font size (A+)'}
             >
               A+
             </button>
@@ -108,9 +110,8 @@ export default function Header() {
               sounds.playClickChime();
               toggleLanguage();
             }}
-            className="tactile-btn flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-[#FBFAF4] hover:bg-[#EAF7EF] border-2 border-[#DFF3E7] text-[#102A43] font-black text-sm min-h-[46px] cursor-pointer"
-            title="भाषा बदलें (Switch Language)"
-            aria-label="Switch Language"
+            className="tactile-btn flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-[#FBFAF4] hover:bg-[#EAF7EF] border-2 border-[#DFF3E7] text-[#102A43] font-black text-sm min-h-[46px] cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+            aria-label={isHindi ? 'भाषा बदलें' : 'Switch Language'}
           >
             <Globe className="w-4 h-4 text-[#167A55]" />
             <span>{isHindi ? '🌐 English' : '🇮🇳 हिंदी'}</span>
@@ -123,15 +124,14 @@ export default function Header() {
               sounds.playClickChime();
               navigateTo('settings');
             }}
-            className={`tactile-btn p-2.5 rounded-2xl border-2 min-h-[46px] cursor-pointer ${
+            className={`tactile-btn p-2.5 rounded-2xl border-2 min-h-[46px] cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
               currentScreen === 'settings'
                 ? 'bg-[#167A55] border-[#0D4E36] text-white'
                 : 'bg-[#FBFAF4] hover:bg-[#EAF7EF] border-[#DFF3E7] text-[#102A43]'
             }`}
-            title={t('settings')}
             aria-label={t('settings')}
           >
-            <SettingsIcon className="w-5 h-5" />
+            <SettingsIcon className="w-5 h-5" aria-hidden="true" />
           </button>
 
           {/* SOS Help Button (Visually prominent in Pink/Red) */}
@@ -141,10 +141,10 @@ export default function Header() {
               sounds.playClickChime();
               setSosModalOpen(true);
             }}
-            className="tactile-btn flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-2xl bg-[#E84D78] hover:bg-[#D43B66] border-2 border-[#B82B53] text-white font-black text-sm sm:text-base shadow-sm min-h-[46px] cursor-pointer animate-pulse"
-            title={t('sos')}
+            className="tactile-btn flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-2xl bg-[#E84D78] hover:bg-[#D43B66] border-2 border-[#B82B53] text-white font-black text-sm sm:text-base shadow-sm min-h-[46px] cursor-pointer animate-pulse focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+            aria-label={t('sos')}
           >
-            <Heart className="w-5 h-5 fill-white stroke-none" />
+            <Heart className="w-5 h-5 fill-white stroke-none" aria-hidden="true" />
             <span>{t('sos')}</span>
           </button>
         </div>

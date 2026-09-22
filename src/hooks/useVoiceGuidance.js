@@ -4,12 +4,23 @@ import { useState, useEffect, useCallback } from 'react';
  * useVoiceGuidance - Accessible Web Speech API wrapper for elderly dementia users.
  * Supports bilingual speaking (Hindi and Indian English), speech rate adjustment for seniors,
  * and tracks speaking state with pulsing indicator.
+ *
+ * @param {string} [appLanguage] - The app's currently selected language ('hi' | 'en') from
+ *   I18nContext. When provided, this hook's spoken language always stays in sync with it,
+ *   so switching the app language also switches what the voice assistant speaks.
  */
-export function useVoiceGuidance() {
+export function useVoiceGuidance(appLanguage) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [availableVoices, setAvailableVoices] = useState([]);
-  const [currentLanguage, setCurrentLanguage] = useState('hi'); // 'hi' or 'en'
+  const [currentLanguage, setCurrentLanguage] = useState(appLanguage === 'en' ? 'en' : 'hi'); // 'hi' or 'en'
   const [voiceEnabled, setVoiceEnabled] = useState(true);
+
+  // Keep spoken language in lockstep with the app's selected language.
+  useEffect(() => {
+    if (appLanguage === 'en' || appLanguage === 'hi') {
+      setCurrentLanguage(appLanguage);
+    }
+  }, [appLanguage]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {

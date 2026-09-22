@@ -1,19 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import {
-  RotateCcw,
-  Sparkles,
-  Trophy,
-  HelpCircle,
-  Eye,
-  CheckCircle2,
-  Clock,
-  ArrowRight,
-  ArrowLeft,
-  Volume2,
-} from 'lucide-react';
+import { Eye, CheckCircle2, Clock, ArrowRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import VoiceButton from '../components/VoiceButton';
+import { useI18n } from '../i18n/I18nContext';
+import GameTopBar from '../components/games/GameTopBar';
+import AdaptiveDifficultyCard from '../components/games/AdaptiveDifficultyCard';
+import GameCompletionActions from '../components/games/GameCompletionActions';
+
+const THEME = { bg: '#EEE9FF', border: '#7658C8', text: '#7658C8', btnBg: '#7658C8', btnHover: '#6042B3', btnBorder: '#4A2D99' };
 
 // Pool of familiar Indian elder cultural items
 const ITEM_POOL = [
@@ -28,13 +22,13 @@ const ITEM_POOL = [
 ];
 
 export default function PictureRecall() {
-  const { navigateTo, sounds, voice, gameScores, setGameScores } = useApp();
+  const { navigateTo, sounds, voice, recordGameResult, patient } = useApp();
+  const { t, isHindi } = useI18n();
 
   const [round, setRound] = useState(1);
   const maxRounds = 3;
 
-  // States: 'memorize', 'recall', 'feedback', 'won'
-  const [phase, setPhase] = useState('memorize');
+  const [phase, setPhase] = useState('memorize'); // 'memorize', 'recall', 'feedback', 'won'
   const [memorizeItems, setMemorizeItems] = useState([]);
   const [targetItem, setTargetItem] = useState(null);
   const [choices, setChoices] = useState([]);
@@ -42,42 +36,58 @@ export default function PictureRecall() {
   const [selectedChoiceId, setSelectedChoiceId] = useState(null);
   const [isCorrect, setIsCorrect] = useState(null);
   const [stars, setStars] = useState(0);
+  const [correctRounds, setCorrectRounds] = useState(0);
+  const [totalSeconds, setTotalSeconds] = useState(0);
+  const [responseTimes, setResponseTimes] = useState([]);
+  const [adaptiveResult, setAdaptiveResult] = useState(null);
 
   const timerRef = useRef(null);
+  const gameTimerRef = useRef(null);
+  const recallStartRef = useRef(null);
 
-  // Setup round
-  const startRound = (roundNum) => {
+  useEffect(() => {
+    if (phase !== 'won') {
+      gameTimerRef.current = setInterval(() => setTotalSeconds((s) => s + 1), 1000);
+    } else {
+      clearInterval(gameTimerRef.current);
+    }
+    return () => clearInterval(gameTimerRef.current);
+  }, [phase]);
+
+  const formatTime = (secs) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const avgResponseTime =
+    responseTimes.length > 0
+      ? (responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length).toFixed(1)
+      : '0.0';
+
+  const startRound = () => {
     clearInterval(timerRef.current);
     setSelectedChoiceId(null);
     setIsCorrect(null);
     setCountdown(5);
 
-    // Shuffle item pool and pick 3 to memorize
     const shuffled = [...ITEM_POOL].sort(() => Math.random() - 0.5);
     const toMemorize = shuffled.slice(0, 3);
     setMemorizeItems(toMemorize);
 
-    // Pick 1 item from the memorized set as the target question
     const target = toMemorize[Math.floor(Math.random() * toMemorize.length)];
     setTargetItem(target);
 
-    // Pick 3 distractors from the remaining items
     const remaining = shuffled.slice(3);
     const distractors = remaining.slice(0, 3);
 
-    // Combine target and distractors and shuffle for recall choices
     const recallChoices = [target, ...distractors].sort(() => Math.random() - 0.5);
     setChoices(recallChoices);
 
     setPhase('memorize');
 
-    // Announce via voice
-    voice.speak(
-      `इन चित्रों को ध्यान से देखें और याद रखें: ${toMemorize.map((m) => m.nameHindi).join(', ')}।`,
-      `Look at these pictures carefully and remember them.`
-    );
+    voice.speak(t('pictureMemorizeSpeech'), t('pictureMemorizeSpeech'));
 
-    // 5-second countdown timer
     let timeLeft = 5;
     timerRef.current = setInterval(() => {
       timeLeft -= 1;
@@ -86,22 +96,28 @@ export default function PictureRecall() {
       if (timeLeft <= 0) {
         clearInterval(timerRef.current);
         setPhase('recall');
-        voice.speak(
-          'समय समाप्त! अब बताइए, इनमें से कौन सा चित्र आपने अभी देखा था?',
-          'Time is up! Now tell which of these pictures did you see earlier?'
-        );
+        recallStartRef.current = Date.now();
+        voice.speak(t('pictureTimeUpSpeech'), t('pictureTimeUpSpeech'));
       }
     }, 1000);
   };
 
   useEffect(() => {
     startRound(1);
-    return () => clearInterval(timerRef.current);
+    return () => {
+      clearInterval(timerRef.current);
+      clearInterval(gameTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Senior taps an answer choice
   const handleChoiceSelect = (choice) => {
     if (phase !== 'recall') return;
+
+    if (recallStartRef.current) {
+      const deltaSec = Math.min((Date.now() - recallStartRef.current) / 1000, 15);
+      setResponseTimes((prev) => [...prev, deltaSec]);
+    }
 
     setSelectedChoiceId(choice.id);
     const correct = choice.id === targetItem.id;
@@ -111,20 +127,20 @@ export default function PictureRecall() {
     if (correct) {
       sounds.playSuccessChime();
       setStars((s) => s + 1);
+      setCorrectRounds((c) => c + 1);
       voice.speak(
-        `बहुत खूब! आपने सही पहचाना: ${choice.nameHindi}!`,
-        `Splendid! You correctly recalled ${choice.nameEnglish}!`
+        t('pictureCorrectSpeech', { item: choice.nameHindi }),
+        t('pictureCorrectSpeech', { item: choice.nameEnglish })
       );
     } else {
       sounds.playEncouragementChime();
       voice.speak(
-        `कोई बात नहीं! सही चित्र "${targetItem.nameHindi}" था।`,
-        `No worries! The correct item was ${targetItem.nameEnglish}.`
+        t('pictureIncorrectSpeech', { item: targetItem.nameHindi }),
+        t('pictureIncorrectSpeech', { item: targetItem.nameEnglish })
       );
     }
   };
 
-  // Next round or completion
   const handleNext = () => {
     sounds.playClickChime();
     if (round < maxRounds) {
@@ -132,154 +148,110 @@ export default function PictureRecall() {
       setRound(nextRound);
       startRound(nextRound);
     } else {
-      // Game completed!
       setPhase('won');
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 },
+      confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+
+      const finalStars = stars + 1;
+      const finalAccuracy = Math.round((correctRounds / maxRounds) * 100);
+      const finalAvgResp =
+        responseTimes.length > 0
+          ? Number((responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length).toFixed(1))
+          : 3.0;
+
+      const adaptive = recordGameResult({
+        game: 'pictureRecall',
+        accuracy: finalAccuracy,
+        averageResponseTime: finalAvgResp,
+        starsEarned: finalStars,
+        scoreUpdater: (prev) => ({ pictureRecallStars: (prev.pictureRecallStars || 0) + finalStars }),
       });
-      setGameScores((prev) => ({
-        ...prev,
-        pictureRecallStars: (prev.pictureRecallStars || 0) + stars + 1,
-      }));
-      voice.speak(
-        'शानदार! आपने चित्र याद रखने का खेल पूरा कर लिया है! बधाई हो!',
-        'Splendid! You completed the picture recall game! Congratulations!'
-      );
+      setAdaptiveResult(adaptive);
+
+      voice.speak(t('pictureCompleteSpeech'), t('pictureCompleteSpeech'));
     }
   };
 
   const restartGame = () => {
     setRound(1);
     setStars(0);
+    setCorrectRounds(0);
+    setTotalSeconds(0);
+    setResponseTimes([]);
+    setAdaptiveResult(null);
     startRound(1);
   };
 
   const handleListenRules = () => {
     sounds.playClickChime();
-    voice.speak(
-      'चित्र याद खेल: स्क्रीन पर 5 सेकंड के लिए तीन चित्र दिखेंगे। उन्हें ध्यान से देखें। फिर छिपे हुए चित्रों में से सही चित्र को पहचानें।',
-      'Picture Recall: Three pictures will appear for 5 seconds. Remember them. Then choose which picture was shown.'
-    );
+    voice.speak(t('pictureRecallRulesSpeech'), t('pictureRecallRulesSpeech'));
   };
+
+  const patientName = isHindi ? (patient.nameHindi || 'दामोदर जी') : (patient.nameEnglish || 'Damodar Ji');
 
   return (
     <div className="space-y-6 pb-12 animate-fade-in text-left">
-      {/* Back button to Games Hub */}
-      <button
-        onClick={() => navigateTo('games')}
-        className="tactile-btn inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white border-2 border-[#DFF3E7] text-[#102A43] font-bold text-base hover:bg-[#EAF7EF] cursor-pointer"
-      >
-        <ArrowLeft className="w-5 h-5 text-[#167A55]" />
-        <span>सभी खेलों पर वापस जाएं (Back to Games)</span>
-      </button>
+      <GameTopBar
+        icon="🖼️"
+        title={t('pictureRecallPageTitle')}
+        tagline={t('pictureRecallTagline')}
+        subtitle={t('pictureRecallSubtitle')}
+        theme={THEME}
+        onBack={() => navigateTo('games')}
+        onListenRules={handleListenRules}
+        onRestart={restartGame}
+      />
 
-      {/* 1. Header Banner - Purple Theme */}
-      <div className="bg-[#EEE9FF] rounded-[2.5rem] p-6 sm:p-8 border-3 border-[#7658C8]/40 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5 mb-1">
-            <span className="text-4xl">🖼️</span>
-            <h1 className="text-3xl sm:text-5xl font-black text-[#102A43]">
-              चित्र याद खेल
-            </h1>
-          </div>
-          <p className="text-xl sm:text-2xl font-black text-[#7658C8]">
-            "कुछ सेकंड में दिखाए गए चित्रों को याद रखें और सही चित्र पहचानें"
-          </p>
-          <p className="text-base sm:text-lg font-bold text-[#5D7184] mt-0.5">
-            Visual Memory Retention • Focus & Attention Training
-          </p>
-        </div>
-
-        <div className="flex items-center flex-wrap gap-2.5">
-          <button
-            onClick={handleListenRules}
-            className="tactile-btn flex items-center gap-2 px-5 py-3 rounded-2xl bg-white hover:bg-[#EEE9FF] border-2 border-[#7658C8] text-[#7658C8] font-black text-lg min-h-[52px] cursor-pointer shadow-xs"
-          >
-            <Volume2 className="w-6 h-6 animate-pulse" />
-            <span>🔊 नियम सुनें (Listen Rules)</span>
-          </button>
-
-          <button
-            onClick={restartGame}
-            className="tactile-btn flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#7658C8] hover:bg-[#6042B3] border-2 border-[#4A2D99] text-white font-black text-lg min-h-[52px] cursor-pointer shadow-sm"
-          >
-            <RotateCcw className="w-6 h-6 stroke-[2.5]" />
-            <span>नया खेल (Restart)</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 2. Round & Star Bar */}
+      {/* Round, Star & Time Bar */}
       <div className="bg-white rounded-3xl p-5 sm:p-6 border-2 border-[#DFF3E7] shadow-xs flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <span className="text-xl font-black text-[#102A43]">
-            चक्र (Round): <strong className="text-3xl text-[#7658C8]">{round}</strong> / {maxRounds}
-          </span>
-          <span className="text-base font-bold text-[#5D7184]">
-            (दृष्टि स्मृति अभ्यास / Visual Memory)
+            {t('roundLabel')}: <strong className="text-3xl text-[#7658C8]">{round}</strong> / {maxRounds}
           </span>
         </div>
 
-        <div className="flex items-center gap-2 text-[#7658C8] font-black text-xl">
-          <span>⭐ अर्जित सितारे: {stars}</span>
+        <div className="flex items-center gap-4 text-[#7658C8] font-black text-lg sm:text-xl">
+          <span>⭐ {t('starsLabel')}: {stars}</span>
+          <span className="font-mono">⏱️ {formatTime(totalSeconds)}</span>
         </div>
       </div>
 
-      {/* 3. PHASE 1: MEMORIZE (Show 3 pictures with 5s countdown) */}
+      {/* PHASE 1: MEMORIZE */}
       {phase === 'memorize' && (
         <div className="bg-white rounded-[2.5rem] p-6 sm:p-10 border-4 border-[#EEE9FF] shadow-md text-center space-y-6">
           <div className="space-y-1">
             <span className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[#EEE9FF] text-[#7658C8] font-black text-lg border border-[#7658C8]/30">
-              <Eye className="w-6 h-6 animate-pulse" />
-              <span>इन चित्रों को ध्यान से देखें और याद रखें (Memorize These)</span>
+              <Eye className="w-6 h-6" aria-hidden="true" />
+              <span>{t('pictureMemorizeLabel')}</span>
             </span>
-            <div className="pt-3 flex items-center justify-center gap-2 text-3xl sm:text-4xl font-mono font-black text-[#E98A20]">
-              <Clock className="w-8 h-8" />
-              <span>{countdown} सेकंड शेष</span>
+            <div className="pt-3 flex items-center justify-center gap-2 text-3xl sm:text-4xl font-mono font-black text-[#E98A20]" role="status" aria-live="polite">
+              <Clock className="w-8 h-8" aria-hidden="true" />
+              <span>{t('pictureSecondsLeft', { count: countdown })}</span>
             </div>
           </div>
 
-          {/* 3 Large Picture Cards to Memorize */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-2xl mx-auto pt-2">
             {memorizeItems.map((item) => (
               <div
                 key={item.id}
                 className="tactile-btn p-6 rounded-3xl bg-[#FBFAF4] border-4 border-[#EEE9FF] flex flex-col items-center justify-center gap-2 shadow-xs"
               >
-                <span className="text-6xl sm:text-7xl filter drop-shadow">
-                  {item.emoji}
-                </span>
+                <span className="text-6xl sm:text-7xl filter drop-shadow" aria-hidden="true">{item.emoji}</span>
                 <span className="text-2xl sm:text-3xl font-black text-[#102A43]">
-                  {item.nameHindi}
-                </span>
-                <span className="text-sm sm:text-base font-bold text-[#5D7184]">
-                  {item.nameEnglish}
+                  {isHindi ? item.nameHindi : item.nameEnglish}
                 </span>
               </div>
             ))}
           </div>
 
-          <p className="text-base sm:text-lg font-bold text-[#5D7184]">
-            चित्र 5 सेकंड बाद स्वतः छिप जाएंगे। शांत मन से ध्यान दें।
-          </p>
+          <p className="text-base sm:text-lg font-bold text-[#5D7184]">{t('pictureMemorizeHint')}</p>
         </div>
       )}
 
-      {/* 4. PHASE 2 & 3: RECALL & FEEDBACK (Choose which picture was shown) */}
+      {/* PHASE 2 & 3: RECALL & FEEDBACK */}
       {(phase === 'recall' || phase === 'feedback') && (
         <div className="bg-white rounded-[2.5rem] p-6 sm:p-10 border-4 border-[#EEE9FF] shadow-md text-center space-y-6">
-          <div className="space-y-1">
-            <h2 className="text-2xl sm:text-4xl font-black text-[#102A43]">
-              इनमें से कौन सा चित्र आपने अभी पहले देखा था?
-            </h2>
-            <p className="text-base sm:text-xl font-bold text-[#5D7184]">
-              Which of these pictures did you see earlier?
-            </p>
-          </div>
+          <h2 className="text-2xl sm:text-4xl font-black text-[#102A43]">{t('pictureRecallQuestion')}</h2>
 
-          {/* 4 Large Choice Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto pt-2">
             {choices.map((choice) => {
               const isSelected = selectedChoiceId === choice.id;
@@ -300,15 +272,14 @@ export default function PictureRecall() {
                   key={choice.id}
                   onClick={() => handleChoiceSelect(choice)}
                   disabled={phase === 'feedback'}
-                  className={`tactile-btn p-5 sm:p-6 rounded-3xl border-4 flex flex-col items-center justify-center gap-2 transition-all min-h-[160px] cursor-pointer ${cardStyle}`}
+                  className={`tactile-btn p-5 sm:p-6 rounded-3xl border-4 flex flex-col items-center justify-center gap-2 transition-all min-h-[160px] cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${cardStyle}`}
                 >
-                  <span className="text-6xl filter drop-shadow">{choice.emoji}</span>
-                  <span className="text-xl sm:text-2xl font-black">{choice.nameHindi}</span>
-                  <span className="text-xs sm:text-sm font-bold opacity-80">{choice.nameEnglish}</span>
+                  <span className="text-6xl filter drop-shadow" aria-hidden="true">{choice.emoji}</span>
+                  <span className="text-xl sm:text-2xl font-black">{isHindi ? choice.nameHindi : choice.nameEnglish}</span>
 
                   {phase === 'feedback' && isTarget && (
                     <span className="inline-flex items-center gap-1.5 text-[#167A55] font-black text-xs sm:text-sm bg-white px-3 py-1 rounded-full mt-1 shadow-xs">
-                      <CheckCircle2 className="w-4 h-4" /> सही चित्र!
+                      <CheckCircle2 className="w-4 h-4" aria-hidden="true" /> {t('pictureCorrectBadge')}
                     </span>
                   )}
                 </button>
@@ -316,61 +287,46 @@ export default function PictureRecall() {
             })}
           </div>
 
-          {/* Feedback & Next Button */}
           {phase === 'feedback' && (
-            <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4 animate-slow-fade">
+            <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4 animate-slow-fade" role="status" aria-live="polite">
               <span className="text-xl sm:text-2xl font-black text-[#102A43]">
-                {isCorrect ? '🌟 शाबाश! सही उत्तर!' : '🌸 कोई बात नहीं! अभ्यास से याददाश्त तेज होती है।'}
+                {isCorrect ? `🌟 ${t('pictureCorrectFeedback')}` : `🌸 ${t('pictureIncorrectFeedback')}`}
               </span>
 
               <button
                 onClick={handleNext}
-                className="tactile-btn px-8 py-4 rounded-2xl bg-[#7658C8] hover:bg-[#6042B3] border-2 border-[#4A2D99] text-white font-black text-xl flex items-center gap-3 shadow-lg animate-bounce cursor-pointer"
+                className="tactile-btn px-8 py-4 rounded-2xl bg-[#7658C8] hover:bg-[#6042B3] border-2 border-[#4A2D99] text-white font-black text-xl flex items-center gap-3 shadow-lg cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
               >
-                <span>अगला (Next)</span>
-                <ArrowRight className="w-6 h-6 stroke-[3]" />
+                <span>{t('nextQuestionBtn')}</span>
+                <ArrowRight className="w-6 h-6 stroke-[3]" aria-hidden="true" />
               </button>
             </div>
           )}
         </div>
       )}
 
-      {/* 5. PHASE 4: GAME WON CELEBRATION */}
+      {/* PHASE 4: GAME WON CELEBRATION */}
       {phase === 'won' && (
         <div className="bg-[#EEE9FF] border-4 border-[#7658C8] rounded-[2.5rem] p-6 sm:p-10 text-center shadow-xl animate-slow-fade">
-          <span className="text-6xl inline-block mb-3">🌺</span>
-          <h2 className="text-3xl sm:text-5xl font-black text-[#102A43]">
-            बहुत खूब दामोदर जी! चक्र पूरा हुआ!
-          </h2>
-          <p className="mt-2 text-xl sm:text-2xl font-black text-[#7658C8]">
-            आपने कुल {stars} सितारे प्राप्त किए!
-          </p>
+          <span className="text-6xl inline-block mb-3" aria-hidden="true">🌺</span>
+          <h2 className="text-3xl sm:text-5xl font-black text-[#102A43]">{t('pictureCompleteTitle', { name: patientName })}</h2>
+          <p className="mt-2 text-xl sm:text-2xl font-black text-[#7658C8]">{t('pictureCompleteSub', { stars: stars + 1 })}</p>
 
-          <div className="my-5 flex items-center justify-center gap-3 text-4xl sm:text-5xl text-amber-500">
-            <span>⭐</span>
-            <span>⭐</span>
-            <span>⭐</span>
+          <div className="my-5 flex items-center justify-center gap-3 text-4xl sm:text-5xl text-amber-500" aria-hidden="true">
+            <span>⭐</span><span>⭐</span><span>⭐</span>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 mt-6">
-            <button
-              onClick={restartGame}
-              className="tactile-btn px-8 py-4 sm:py-5 rounded-2xl bg-[#7658C8] hover:bg-[#6042B3] border-2 border-[#4A2D99] text-white font-black text-xl sm:text-2xl flex items-center gap-3 shadow-lg cursor-pointer"
-            >
-              <RotateCcw className="w-7 h-7 stroke-[3]" />
-              <span>फिर से खेलें (Play Again)</span>
-            </button>
+          <AdaptiveDifficultyCard
+            adaptiveResult={adaptiveResult}
+            accuracyPercent={Math.round((correctRounds / maxRounds) * 100)}
+            avgResponseTime={avgResponseTime}
+          />
 
-            <button
-              onClick={() => navigateTo('games')}
-              className="tactile-btn px-6 py-4 sm:py-5 rounded-2xl bg-white hover:bg-[#FBFAF4] border-2 border-[#DFF3E7] text-[#102A43] font-black text-xl cursor-pointer"
-            >
-              अन्य खेल देखें (Other Games)
-            </button>
-          </div>
+          <p className="text-sm font-semibold text-[#167A55] mb-6">✓ {t('resultsSavedNote')}</p>
+
+          <GameCompletionActions onPlayAgain={restartGame} onOtherGames={() => navigateTo('games')} theme={THEME} />
         </div>
       )}
     </div>
   );
 }
-

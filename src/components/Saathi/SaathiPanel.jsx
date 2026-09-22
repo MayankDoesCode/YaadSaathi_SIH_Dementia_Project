@@ -5,7 +5,7 @@
  */
 
 import React, { useState } from 'react';
-import { X, Send, Sparkles, Mic, Volume2, ShieldCheck, Heart, Pill, Brain, Calendar, BarChart2 } from 'lucide-react';
+import { X, Send, Sparkles } from 'lucide-react';
 import { useSaathi } from '../../context/SaathiContext';
 import { useApp } from '../../context/AppContext';
 import { useI18n } from '../../i18n/I18nContext';
@@ -15,7 +15,7 @@ import SaathiConversation from './SaathiConversation';
 export default function SaathiPanel() {
   const { isPanelOpen, closeSaathi, processInput, proactiveMoment, isMicAvailable } = useSaathi();
   const { patient } = useApp();
-  const { isHindi, t } = useI18n();
+  const { isHindi } = useI18n();
   const [inputText, setInputText] = useState('');
   const [showDemoChips, setShowDemoChips] = useState(true);
 

@@ -15,6 +15,8 @@ import {
   getSafeZoneStatus,
   requestElderlyLocation,
 } from '../services/locationService';
+import { useI18n } from '../i18n/I18nContext';
+import { calculateAdaptiveDifficulty } from '../logic/adaptiveEngine';
 
 const AppContext = createContext(null);
 
@@ -54,11 +56,6 @@ export function AppProvider({ children }) {
     document.documentElement.style.setProperty('--app-font-scale', String(fontScale));
     localStorage.setItem('yaadsaathi_font_scale', String(fontScale));
   }, [fontScale]);
-
-  // Language Mode: 'hi' or 'en'
-  const [languageMode, setLanguageMode] = useState(() => {
-    return localStorage.getItem('yaadsaathi_language') || 'hi';
-  });
 
   // Patient Profile
   const [patient, setPatient] = useState(() => {
@@ -137,9 +134,86 @@ export function AppProvider({ children }) {
 
   const safeZoneStatus = getSafeZoneStatus(distanceFromHome, SAFE_RADIUS_METERS);
 
-  // Audio Hooks
-  const voice = useVoiceGuidance();
+  // Audio Hooks (voice guidance always speaks in the app's currently selected language)
+  const { language } = useI18n();
+  const voice = useVoiceGuidance(language);
   const sounds = useSoundEffects();
+
+  // =========================================================================
+  // COGNITIVE GAME RESULTS & ADAPTIVE DIFFICULTY (shared across all 4 games)
+  // =========================================================================
+  // Rolling window of the last few game results, used to smooth adaptive
+  // difficulty changes so a single lucky/unlucky attempt doesn't swing the
+  // level dramatically (Requirement: stable, explainable difficulty changes).
+  const [recentGameResults, setRecentGameResults] = useState(() => {
+    try {
+      const saved = localStorage.getItem('yaadsaathi_recent_results');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('yaadsaathi_recent_results', JSON.stringify(recentGameResults));
+  }, [recentGameResults]);
+
+  // Requirement 20-style daily reset for "games played today" (mirrors the medicine reset)
+  useEffect(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const lastPlayDate = localStorage.getItem('yaadsaathi_gameplay_date');
+    if (lastPlayDate && lastPlayDate !== todayStr) {
+      setGameScores((prev) => ({ ...prev, gamesPlayedToday: 0 }));
+    }
+    localStorage.setItem('yaadsaathi_gameplay_date', todayStr);
+  }, []);
+
+  /**
+   * Records the completion of any cognitive game: updates score totals,
+   * saves the result into the rolling performance history, and computes the
+   * next adaptive difficulty level from a smoothed (multi-session) average
+   * rather than a single attempt. Returns the adaptive-engine recommendation
+   * so the calling game can display/speak it immediately.
+   */
+  const recordGameResult = useCallback(
+    ({ game, accuracy, averageResponseTime, starsEarned = 1, scoreUpdater }) => {
+      sounds.playSuccessChime();
+
+      const thisResult = {
+        game,
+        accuracy: Number(accuracy) || 0,
+        averageResponseTime: Number(averageResponseTime) || 0,
+        timestamp: Date.now(),
+      };
+      const nextResults = [thisResult, ...recentGameResults].slice(0, 5);
+      setRecentGameResults(nextResults);
+
+      // Smooth over the last up to 3 sessions (including this one) for stability
+      const sampleWindow = nextResults.slice(0, 3);
+      const avgAccuracy =
+        sampleWindow.reduce((sum, r) => sum + r.accuracy, 0) / sampleWindow.length;
+      const avgResponseTime =
+        sampleWindow.reduce((sum, r) => sum + r.averageResponseTime, 0) / sampleWindow.length;
+
+      const adaptive = calculateAdaptiveDifficulty({
+        accuracy: avgAccuracy,
+        averageResponseTime: avgResponseTime,
+        currentDifficulty: cognitiveDifficulty,
+      });
+      setCognitiveDifficulty(adaptive.nextDifficulty);
+
+      setGameScores((prev) => ({
+        ...prev,
+        ...(typeof scoreUpdater === 'function' ? scoreUpdater(prev) : {}),
+        totalStars: (prev.totalStars || 0) + starsEarned,
+        gamesPlayedToday: (prev.gamesPlayedToday || 0) + 1,
+        currentStreak: (prev.currentStreak || 0) + 1,
+      }));
+
+      return adaptive;
+    },
+    [recentGameResults, cognitiveDifficulty, sounds]
+  );
 
   // =========================================================================
   // MEDICINE REMINDER & CAREGIVER ESCALATION SYSTEM (Requirements 1-15, 19-22)
@@ -649,6 +723,18 @@ export function AppProvider({ children }) {
     localStorage.setItem('yaadsaathi_splash_dismissed', 'true');
   };
 
+  // Add a new custom routine reminder
+  const addReminder = (newItem) => {
+    sounds.playSuccessChime();
+    setReminders((prev) => [...prev, newItem]);
+  };
+
+  // Delete a routine reminder
+  const deleteReminder = (id) => {
+    sounds.playClickChime();
+    setReminders((prev) => prev.filter((item) => item.id !== id));
+  };
+
   // Toggle Reminder completion
   const toggleReminder = (id) => {
     setReminders((prev) =>
@@ -713,6 +799,7 @@ export function AppProvider({ children }) {
       gamesPlayedToday: 2,
     });
     setCognitiveDifficulty(3);
+    setRecentGameResults([]);
     setShowSplash(false);
     setShowLanguageModal(false);
     voice.speak('सभी डेटा रीसेट कर दिया गया है।', 'All data has been reset to defaults.');
@@ -735,8 +822,6 @@ export function AppProvider({ children }) {
         increaseFontSize,
         fontSizeLevel: FONT_SCALES.indexOf(fontScale) >= 0 ? FONT_SCALES.indexOf(fontScale) : 1,
         setFontSize,
-        languageMode,
-        setLanguageMode,
         patient,
         setPatient,
         stepsToday,
@@ -745,12 +830,16 @@ export function AppProvider({ children }) {
         resetSteps,
         reminders,
         toggleReminder,
+        addReminder,
+        deleteReminder,
         todayMood,
         recordMood,
         cognitiveDifficulty,
         setCognitiveDifficulty,
         gameScores,
         setGameScores,
+        recentGameResults,
+        recordGameResult,
         sosModalOpen,
         setSosModalOpen,
         // SafeCircle

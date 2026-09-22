@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  Sparkles,
-  Trophy,
-  ArrowRight,
-  HelpCircle,
-  Clock,
-} from 'lucide-react';
+import { Sparkles, Trophy, ArrowRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useI18n } from '../i18n/I18nContext';
 import VoiceButton from '../components/VoiceButton';
@@ -20,52 +14,52 @@ export default function GamesHub() {
       title: t('memoryMatch'),
       desc: t('memoryMatchDesc'),
       icon: '🧠',
-      tag: isHindi ? 'Pink Theme • स्मृति' : 'Pink Theme • Memory',
+      tag: isHindi ? 'स्मृति अभ्यास' : 'Memory Practice',
       benefit: isHindi ? 'मस्तिष्क की एकाग्रता और दृश्य याददाश्त बढ़ाता है।' : 'Boosts focus and visual memory retention.',
       bgColor: 'bg-[#FFE8EF]',
       borderColor: 'border-[#E84D78]/40',
       textColor: 'text-[#E84D78]',
       btnBg: 'bg-[#E84D78] hover:bg-[#D43B66]',
-      bestScore: `${gameScores.memoryMatchWins || 5} ${isHindi ? 'बार जीता' : 'Wins'}`,
+      bestScore: `${gameScores.memoryMatchWins || 0} ${t('winsCountLabel')}`,
     },
     {
       id: 'pattern-recognition',
       title: t('patternGame'),
       desc: t('patternGameDesc'),
       icon: '🧩',
-      tag: isHindi ? 'Blue Theme • क्रम ध्यान' : 'Blue Theme • Focus',
+      tag: isHindi ? 'क्रम ध्यान अभ्यास' : 'Focus Practice',
       benefit: isHindi ? 'आवाज और रंगों के समन्वय से ध्यान केंद्रित रहता है।' : 'Harmonizes auditory rhythm and visual attention.',
       bgColor: 'bg-[#E6F1FF]',
       borderColor: 'border-[#2879D0]/40',
       textColor: 'text-[#2879D0]',
       btnBg: 'bg-[#2879D0] hover:bg-[#2065B3]',
-      bestScore: `${isHindi ? 'स्तर' : 'Level'} ${gameScores.patternStreak || 4}`,
+      bestScore: `${t('roundLabel')} ${gameScores.patternStreak || 0}`,
     },
     {
       id: 'word-recall',
       title: t('wordRecall'),
       desc: t('wordRecallDesc'),
       icon: 'Aa',
-      tag: isHindi ? 'Orange Theme • भाषा' : 'Orange Theme • Language',
+      tag: isHindi ? 'भाषा अभ्यास' : 'Language Practice',
       benefit: isHindi ? 'दैनिक वस्तुओं के नाम याद रखने में सहायता करता है।' : 'Aids conversational recall of household words.',
       bgColor: 'bg-[#FFF0D7]',
       borderColor: 'border-[#E98A20]/40',
       textColor: 'text-[#E98A20]',
       btnBg: 'bg-[#E98A20] hover:bg-[#CF7513]',
-      bestScore: `${gameScores.wordRecallStars || 6} ${isHindi ? 'सितारे' : 'Stars'}`,
+      bestScore: `${gameScores.wordRecallStars || 0} ${t('starsLabel')}`,
     },
     {
       id: 'picture-recall',
       title: t('pictureRecall'),
       desc: t('pictureRecallDesc'),
       icon: '🖼️',
-      tag: isHindi ? 'Purple Theme • दृष्टि स्मृति' : 'Purple Theme • Visual',
+      tag: isHindi ? 'दृष्टि स्मृति अभ्यास' : 'Visual Practice',
       benefit: isHindi ? 'अल्पकालिक दृष्टि स्मृति को सक्रिय करता है।' : 'Strengthens short-term visual pattern recognition.',
       bgColor: 'bg-[#EEE9FF]',
       borderColor: 'border-[#7658C8]/40',
       textColor: 'text-[#7658C8]',
       btnBg: 'bg-[#7658C8] hover:bg-[#6042B3]',
-      bestScore: `${gameScores.pictureRecallStars || 5} ${isHindi ? 'सितारे' : 'Stars'}`,
+      bestScore: `${gameScores.pictureRecallStars || 0} ${t('starsLabel')}`,
     },
   ];
 
@@ -79,7 +73,7 @@ export default function GamesHub() {
             <span>{t('cognitiveGamesTitle')}</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-black text-[#102A43]">
-            {t('games')} (Cognitive Games)
+            {t('games')}
           </h1>
           <p className="mt-1 text-lg sm:text-xl font-bold text-[#167A55]">
             "{t('cognitiveGamesSub')}"
@@ -134,8 +128,8 @@ export default function GamesHub() {
               </p>
 
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-white/80 border border-slate-200 font-bold text-sm text-[#102A43]">
-                <Trophy className="w-4 h-4 text-amber-500" />
-                <span>{isHindi ? 'प्रगति:' : 'Record:'} {game.bestScore}</span>
+                <Trophy className="w-4 h-4 text-amber-500" aria-hidden="true" />
+                <span>{game.bestScore}</span>
               </div>
             </div>
 
@@ -153,10 +147,10 @@ export default function GamesHub() {
                   sounds.playClickChime();
                   navigateTo(game.id);
                 }}
-                className={`tactile-btn px-7 py-3.5 rounded-2xl ${game.btnBg} text-white font-black text-xl flex items-center justify-center gap-2 shadow cursor-pointer`}
+                className={`tactile-btn px-7 py-3.5 rounded-2xl ${game.btnBg} text-white font-black text-xl flex items-center justify-center gap-2 shadow cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#102A43]`}
               >
                 <span>{t('playNow')}</span>
-                <ArrowRight className="w-5 h-5 stroke-[3]" />
+                <ArrowRight className="w-5 h-5 stroke-[3]" aria-hidden="true" />
               </button>
             </div>
           </div>
