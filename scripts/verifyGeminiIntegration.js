@@ -64,7 +64,7 @@ async function runTests() {
   try {
     const t0 = Date.now();
     const res = await handleGeminiChatRequest({
-      model: 'gemini-3.5-flash-lite',
+      model: 'gemini-3.6-flash',
       systemPrompt,
       messages: [
         { role: 'user', content: 'नमस्ते साथी, आज मुझे क्या करना चाहिए?' }
@@ -76,7 +76,7 @@ async function runTests() {
     console.log(`  AI Response: "${res.text}"`);
     assert(Boolean(res.text && res.text.length > 5), 'Received valid reply text');
     assert(res.provider === 'google-gemini', `Provider is "google-gemini"`);
-    assert(res.model === 'gemini-3.5-flash-lite', `Model is "gemini-3.5-flash-lite"`);
+    assert(res.model === 'gemini-3.6-flash', `Model is "gemini-3.6-flash"`);
     assert(typeof res.usage === 'object' && res.usage.totalTokens > 0, `Usage metadata returned (Total tokens: ${res.usage.totalTokens})`);
   } catch (err) {
     assert(false, `Real Gemini request failed: ${err.message}`);
@@ -87,7 +87,7 @@ async function runTests() {
   delete process.env.GEMINI_API_KEY;
   try {
     await handleGeminiChatRequest({
-      model: 'gemini-3.5-flash-lite',
+      model: 'gemini-3.6-flash',
       messages: [{ role: 'user', content: 'Hello' }]
     });
     assert(false, 'Should throw error when GEMINI_API_KEY is missing');
@@ -118,7 +118,7 @@ async function runTests() {
 
   // Test POST /api/saathi/chat
   const chatPayload = JSON.stringify({
-    model: 'gemini-3.5-flash-lite',
+    model: 'gemini-3.6-flash',
     systemPrompt: 'You are Saathi, a friendly companion. Keep answers to 1 short sentence.',
     messages: [
       { role: 'user', content: 'Hello Saathi! Tell me a cheerful greeting.' }
@@ -157,7 +157,7 @@ async function runTests() {
   assert(chatResponse.status === 200, `POST /api/saathi/chat returned HTTP 200 (Got: ${chatResponse.status})`);
   assert(Boolean(chatResponse.data?.text), `HTTP endpoint returned reply text: "${chatResponse.data?.text}"`);
   assert(chatResponse.data?.provider === 'google-gemini', `HTTP endpoint returned provider "google-gemini"`);
-  assert(chatResponse.data?.model === 'gemini-3.5-flash-lite', `HTTP endpoint returned model "gemini-3.5-flash-lite"`);
+  assert(chatResponse.data?.model === 'gemini-3.6-flash', `HTTP endpoint returned model "gemini-3.6-flash"`);
 
   // Close server
   await new Promise((resolve) => server.close(resolve));

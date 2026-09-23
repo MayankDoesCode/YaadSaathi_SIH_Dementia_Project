@@ -97,8 +97,20 @@ export async function sendAIMessage({
     });
 
     if (!response.ok) {
-      const errBody = await response.text().catch(() => '');
-      throw new Error(`AI Provider returned HTTP ${response.status}: ${errBody}`);
+      let errData = {};
+      try {
+        errData = await response.json();
+      } catch (_) {
+        const errBody = await response.text().catch(() => '');
+        errData = { error: errBody };
+      }
+
+      const errorMsg = errData.error || `AI Provider returned HTTP ${response.status}`;
+      const apiError = new Error(errorMsg);
+      apiError.status = response.status;
+      apiError.code = errData.code || (response.status === 401 ? 'INVALID_API_KEY' : response.status === 429 ? 'RATE_LIMIT_EXCEEDED' : 'AI_PROVIDER_ERROR');
+      apiError.originalError = errData.originalError || errData.error || null;
+      throw apiError;
     }
 
     const data = await response.json();
@@ -116,8 +128,16 @@ export async function sendAIMessage({
       metadata: data.metadata || {},
     };
   } catch (err) {
-    if (err.code === 'NOT_CONFIGURED') throw err;
-    const unavailableErr = new Error('Saathi AI is currently unavailable. Please try again later.');
+    if (
+      err.code === 'NOT_CONFIGURED' ||
+      err.code === 'INVALID_API_KEY' ||
+      err.code === 'MISSING_API_KEY' ||
+      err.code === 'RATE_LIMIT_EXCEEDED' ||
+      err.code === 'MODEL_NOT_FOUND'
+    ) {
+      throw err;
+    }
+    const unavailableErr = new Error(err.message || 'Saathi AI is currently unavailable. Please try again later.');
     unavailableErr.code = 'UNAVAILABLE';
     unavailableErr.originalError = err.message;
     throw unavailableErr;

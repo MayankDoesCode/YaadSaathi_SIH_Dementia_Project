@@ -28,7 +28,7 @@ export function getAIProviderConfig() {
   const isBrowser = typeof window !== 'undefined';
   const provider = env.VITE_SAATHI_AI_PROVIDER || env.SAATHI_AI_PROVIDER || (isBrowser ? 'google-gemini' : null);
   const endpoint = env.VITE_SAATHI_AI_ENDPOINT || env.SAATHI_AI_ENDPOINT || (isBrowser ? '/api/saathi/chat' : null);
-  const model = env.VITE_SAATHI_AI_MODEL || env.SAATHI_AI_MODEL || 'gemini-3.5-flash-lite';
+  const model = env.VITE_SAATHI_AI_MODEL || env.SAATHI_AI_MODEL || 'gemini-3.6-flash';
 
   const isConfigured = Boolean(provider && (endpoint || provider === 'mock' || provider === 'local'));
 

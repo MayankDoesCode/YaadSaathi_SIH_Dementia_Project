@@ -321,6 +321,18 @@ export default function SaathiChat() {
         userFacingError = isHindi
           ? 'साथी AI अभी कॉन्फ़िगर नहीं है। कृपया AI प्रदाता एंडपॉइंट जोड़ें।'
           : 'Saathi AI is not configured. Please configure an AI provider endpoint in the environment.';
+      } else if (err.code === 'INVALID_API_KEY') {
+        userFacingError = isHindi
+          ? 'Gemini API Key अमान्य है। कृपया अपनी .env.local में वैध API Key जांचें।'
+          : 'Gemini API Key is invalid or unauthorized. Please check your API key in .env.local.';
+      } else if (err.code === 'MISSING_API_KEY') {
+        userFacingError = isHindi
+          ? 'GEMINI_API_KEY सेट नहीं है। कृपया .env.local में GEMINI_API_KEY जोड़ें।'
+          : 'GEMINI_API_KEY is not configured. Please set GEMINI_API_KEY in .env.local.';
+      } else if (err.code === 'RATE_LIMIT_EXCEEDED') {
+        userFacingError = isHindi
+          ? 'Gemini API अनुरोध सीमा समाप्त हो गई है। कृपया थोड़ी देर बाद प्रयास करें।'
+          : 'Gemini API rate limit exceeded. Please wait a moment and try again.';
       }
 
       setErrorMessage(userFacingError);

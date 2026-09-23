@@ -1,19 +1,25 @@
 /**
  * scripts/verifyNetlifyFunction.js
- * Comprehensive verification of the Netlify Serverless Function (netlify/functions/chat.js).
+ * Comprehensive verification of the Netlify Serverless Functions:
+ * - netlify/functions/saathi-chat.js
+ * - netlify/functions/health.js
+ * - netlify/functions/chat.js (alias)
  * 
  * Verifies:
  * 1. OPTIONS CORS Preflight
- * 2. GET Health Check
+ * 2. GET Health Check (health.js and saathi-chat.js)
  * 3. 405 Method Not Allowed on PUT/DELETE
- * 4. Real Gemini Saathi Chat via Lambda event invocation:
+ * 4. 400 Bad Request on invalid JSON
+ * 5. Real Gemini Saathi Chat via Lambda event invocation:
  *    - Saathi persona & safety bounds
  *    - Hindi regional response
  *    - Today's Activity Plan incorporation
- * 5. Error handling (missing payload, missing API key)
+ * 6. Error handling (missing payload, missing API key)
  */
 
-import { handler } from '../netlify/functions/chat.js';
+import { handler as saathiChatHandler } from '../netlify/functions/saathi-chat.js';
+import { handler as healthHandler } from '../netlify/functions/health.js';
+import { handler as chatAliasHandler } from '../netlify/functions/chat.js';
 import { buildSaathiSystemPrompt } from '../src/services/ai/saathiPromptBuilder.js';
 
 let passed = 0;
@@ -36,25 +42,35 @@ async function runTests() {
 
   // TEST 1: CORS Preflight (OPTIONS)
   console.log('--- TEST 1: OPTIONS Preflight ---');
-  const optionsRes = await handler({ httpMethod: 'OPTIONS' });
+  const optionsRes = await saathiChatHandler({ httpMethod: 'OPTIONS' });
   assert(optionsRes.statusCode === 204, `OPTIONS returns 204 (Got: ${optionsRes.statusCode})`);
   assert(optionsRes.headers['Access-Control-Allow-Origin'] === '*', 'CORS Allow-Origin header is present');
 
   // TEST 2: GET Health Check
   console.log('\n--- TEST 2: GET Health Check ---');
-  const getRes = await handler({ httpMethod: 'GET' });
-  assert(getRes.statusCode === 200, `GET returns 200 (Got: ${getRes.statusCode})`);
-  const healthData = JSON.parse(getRes.body);
+  const healthRes = await healthHandler({ httpMethod: 'GET' });
+  assert(healthRes.statusCode === 200, `Health function returns 200 (Got: ${healthRes.statusCode})`);
+  const healthData = JSON.parse(healthRes.body);
   assert(healthData.status === 'ok', `Health body status is 'ok' (Got: ${healthData.status})`);
   assert(healthData.service.includes('Netlify'), 'Health indicates Netlify service');
 
   // TEST 3: Invalid HTTP Method
   console.log('\n--- TEST 3: Invalid HTTP Method (DELETE) ---');
-  const deleteRes = await handler({ httpMethod: 'DELETE' });
+  const deleteRes = await saathiChatHandler({ httpMethod: 'DELETE' });
   assert(deleteRes.statusCode === 405, `DELETE returns 405 Method Not Allowed (Got: ${deleteRes.statusCode})`);
 
-  // TEST 4: Real Gemini Call: Saathi + Hindi + Today's Plan
-  console.log('\n--- TEST 4: Real Gemini Call (Hindi + Today\'s Plan + Saathi) ---');
+  // TEST 4: Invalid JSON Body
+  console.log('\n--- TEST 4: Invalid JSON Body ---');
+  const invalidJsonRes = await saathiChatHandler({
+    httpMethod: 'POST',
+    body: 'this is not json'
+  });
+  assert(invalidJsonRes.statusCode === 400, `Invalid JSON returns 400 (Got: ${invalidJsonRes.statusCode})`);
+  const invalidData = JSON.parse(invalidJsonRes.body);
+  assert(invalidData.code === 'INVALID_JSON', `Error code matches INVALID_JSON (Got: ${invalidData.code})`);
+
+  // TEST 5: Real Gemini Call: Saathi + Hindi + Today's Plan
+  console.log('\n--- TEST 5: Real Gemini Call (Hindi + Today\'s Plan + Saathi) ---');
   const testContext = {
     userName: 'Kalyani Devi',
     age: 76,
@@ -83,7 +99,7 @@ async function runTests() {
 
   const systemPrompt = buildSaathiSystemPrompt(testContext, 'आज मुझे क्या करना चाहिए?');
   const chatPayload = {
-    model: 'gemini-3.5-flash-lite',
+    model: 'gemini-3.6-flash',
     systemPrompt,
     messages: [
       { role: 'user', content: 'नमस्ते साथी, आज का दिन कैसा रहेगा और मुझे क्या करना चाहिए?' }
@@ -93,7 +109,7 @@ async function runTests() {
   };
 
   const startTime = Date.now();
-  const postRes = await handler({
+  const postRes = await saathiChatHandler({
     httpMethod: 'POST',
     body: JSON.stringify(chatPayload)
   });
@@ -107,16 +123,23 @@ async function runTests() {
   console.log(`  AI Response: "${responseData.text}"`);
   assert(Boolean(responseData.text && responseData.text.length > 10), 'Response text is non-empty and substantial');
   assert(responseData.provider === 'google-gemini', `Provider is 'google-gemini' (Got: ${responseData.provider})`);
-  assert(responseData.model === 'gemini-3.5-flash-lite', `Model is 'gemini-3.5-flash-lite' (Got: ${responseData.model})`);
+  assert(responseData.model === 'gemini-3.6-flash', `Model is 'gemini-3.6-flash' (Got: ${responseData.model})`);
   assert(typeof responseData.usage === 'object' && responseData.usage.totalTokens > 0, `Usage metadata returned with total tokens: ${responseData.usage.totalTokens}`);
   assert(typeof responseData.metadata === 'object', 'Metadata object present');
 
-  // TEST 5: Error Handling - Missing API Key
-  console.log('\n--- TEST 5: Error Handling - Missing API Key ---');
+  // TEST 6: Alias Handler (chat.js) verification
+  console.log('\n--- TEST 6: chat.js alias verification ---');
+  const aliasRes = await chatAliasHandler({
+    httpMethod: 'OPTIONS'
+  });
+  assert(aliasRes.statusCode === 204, `Alias OPTIONS returns 204 (Got: ${aliasRes.statusCode})`);
+
+  // TEST 7: Error Handling - Missing API Key
+  console.log('\n--- TEST 7: Error Handling - Missing API Key ---');
   const savedKey = process.env.GEMINI_API_KEY;
   delete process.env.GEMINI_API_KEY;
 
-  const errorRes = await handler({
+  const errorRes = await saathiChatHandler({
     httpMethod: 'POST',
     body: JSON.stringify({ messages: [{ role: 'user', content: 'Hi' }] })
   });

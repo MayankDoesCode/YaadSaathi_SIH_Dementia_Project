@@ -17,13 +17,13 @@
 # API Proxy: Route /api/saathi/chat to Netlify Serverless Function
 [[redirects]]
   from = "/api/saathi/chat"
-  to = "/.netlify/functions/chat"
+  to = "/.netlify/functions/saathi-chat"
   status = 200
 
-# API Proxy: Route /api/health to Netlify Serverless Function
+# API Proxy: Route /api/health to Netlify Serverless Health Function
 [[redirects]]
   from = "/api/health"
-  to = "/.netlify/functions/chat"
+  to = "/.netlify/functions/health"
   status = 200
 
 # Single Page App (SPA) fallback:

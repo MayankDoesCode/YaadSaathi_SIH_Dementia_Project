@@ -23,13 +23,18 @@ import { GoogleGenAI } from '@google/genai';
  */
 export function resolveGeminiModel(requestedModel) {
   if (!requestedModel || typeof requestedModel !== 'string') {
-    return process.env.VITE_SAATHI_AI_MODEL || 'gemini-3.5-flash-lite';
+    return process.env.VITE_SAATHI_AI_MODEL || 'gemini-3.6-flash';
   }
 
   const clean = requestedModel.trim();
-  // Map older/unavailable models to active 3.5 flash lite
-  if (clean === 'gemini-2.5-flash-lite' || clean === 'gemini-2.5-flash' || clean === 'saathi-elder-v1') {
-    return 'gemini-3.5-flash-lite';
+  // Map older/unavailable models to active 3.6 flash
+  if (
+    clean === 'gemini-3.5-flash-lite' ||
+    clean === 'gemini-2.5-flash-lite' ||
+    clean === 'gemini-2.5-flash' ||
+    clean === 'saathi-elder-v1'
+  ) {
+    return 'gemini-3.6-flash';
   }
 
   return clean;
@@ -175,7 +180,15 @@ export async function handleGeminiChatRequest(payload = {}) {
       code = 'NETWORK_TIMEOUT';
     }
 
-    const formattedError = new Error(err.message || 'Error communicating with Google Gemini API.');
+    let cleanMessage = err.message || 'Error communicating with Google Gemini API.';
+    try {
+      const parsed = JSON.parse(err.message);
+      if (parsed.error?.message) {
+        cleanMessage = parsed.error.message;
+      }
+    } catch (_) {}
+
+    const formattedError = new Error(cleanMessage);
     formattedError.status = status;
     formattedError.code = code;
     formattedError.originalError = msg;
