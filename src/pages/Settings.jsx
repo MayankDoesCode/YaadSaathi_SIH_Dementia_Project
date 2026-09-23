@@ -8,8 +8,12 @@ import {
   RotateCcw,
   CheckCircle2,
   Wifi,
+  RefreshCw,
+  LogIn,
+  LogOut,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n/I18nContext';
 import VoiceButton from '../components/VoiceButton';
 import voiceService from '../services/voiceService';
@@ -24,6 +28,15 @@ export default function Settings() {
     resetAllData,
     sounds,
   } = useApp();
+
+  const {
+    user,
+    isAuthenticated,
+    syncStatus,
+    refreshProfile,
+    signOut,
+    setAuthModalOpen,
+  } = useAuth();
 
   const { t, language, setLanguage, isHindi } = useI18n();
 
@@ -79,6 +92,65 @@ export default function Settings() {
           size="lg"
           label={t('listen')}
         />
+      </div>
+
+      {/* Account & Cloud Sync Section */}
+      <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-2 border-[#DFF3E7] shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-[#EAF7EF] text-[#167A55] flex items-center justify-center">
+              <User className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-black text-[#102A43]">
+                {isHindi ? 'खाता व क्लाउड सिंक' : 'Account & Cloud Sync'}
+              </h2>
+              <p className="text-sm sm:text-base font-bold text-[#5D7184]">
+                {isAuthenticated
+                  ? `${user?.email || 'Logged in'} • ${syncStatus === 'synced' ? (isHindi ? '🟢 क्लाउड में सुरक्षित' : '🟢 Synced to Cloud') : (isHindi ? '🔄 सिंक हो रहा है' : '🔄 Syncing...')}`
+                  : (isHindi ? 'वर्तमान में अतिथि / स्थानीय मोड में सक्रिय' : 'Currently in Guest / Local Mode')}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {isAuthenticated ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => refreshProfile()}
+                  className="tactile-btn px-4 py-2.5 rounded-2xl bg-[#EAF7EF] hover:bg-[#DFF3E7] text-[#167A55] font-black text-sm flex items-center gap-2 cursor-pointer border border-[#167A55]/30"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  <span>{isHindi ? 'अभी सिंक करें' : 'Sync Now'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => signOut()}
+                  className="tactile-btn px-4 py-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-black text-sm flex items-center gap-2 cursor-pointer border border-rose-200"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>{isHindi ? 'लॉगआउट' : 'Sign Out'}</span>
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAuthModalOpen(true)}
+                className="tactile-btn px-5 py-3 rounded-2xl bg-[#167A55] hover:bg-[#126344] text-white font-black text-sm flex items-center gap-2 cursor-pointer shadow-xs"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>{isHindi ? 'क्लाउड खाता जोड़ें / लॉगिन करें' : 'Sign In / Connect Cloud'}</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {isAuthenticated && (
+          <div className="p-4 rounded-2xl bg-[#FBFAF4] border border-[#DFF3E7] text-xs font-mono text-slate-500 break-all">
+            <strong>User UUID:</strong> {user?.id}
+          </div>
+        )}
       </div>
 
       {/* 2. Text Size Controller */}

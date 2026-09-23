@@ -33,6 +33,8 @@ const SaathiChat = lazy(() => import('./pages/SaathiChat'));
 import SaathiButton from './components/Saathi/SaathiButton';
 import SaathiPanel from './components/Saathi/SaathiPanel';
 import MedicineReminderModal from './components/MedicineReminderModal';
+import AuthModal from './components/Auth/AuthModal';
+import UserProfileOnboarding from './components/Auth/UserProfileOnboarding';
 
 function ScreenLoadingFallback() {
   const { t } = useI18n();
@@ -131,6 +133,12 @@ export default function App() {
 
       {/* Active Medicine Scheduled Reminder Modal */}
       <MedicineReminderModal />
+
+      {/* Cloud Authentication Modal */}
+      <AuthModal />
+
+      {/* First-Time User Profile Setup & Onboarding */}
+      <UserProfileOnboarding />
     </div>
   );
 }

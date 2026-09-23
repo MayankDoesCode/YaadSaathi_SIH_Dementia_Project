@@ -5,8 +5,11 @@ import {
   Sun,
   CheckCircle2,
   ArrowRight,
+  Sparkles,
+  UserPlus,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n/I18nContext';
 import VoiceButton from '../components/VoiceButton';
 import StepTracker from '../components/StepTracker';
@@ -14,6 +17,7 @@ import SafeCircleCard from '../components/SafeCircleCard';
 
 export default function Home() {
   const {
+    patient,
     reminders,
     toggleReminder,
     todayMood,
@@ -25,7 +29,25 @@ export default function Home() {
     setSosModalOpen,
   } = useApp();
 
+  const { isAuthenticated, setAuthModalOpen, setOnboardingOpen } = useAuth();
   const { t, isHindi } = useI18n();
+
+  const seniorDisplayName =
+    patient?.preferredName ||
+    patient?.displayName ||
+    (isHindi ? (patient?.nameHindi || patient?.name || '') : (patient?.nameEnglish || patient?.name || ''));
+
+  const heroHeading = seniorDisplayName
+    ? (isHindi ? `नमस्ते, ${seniorDisplayName}!` : `Good Day, ${seniorDisplayName}!`)
+    : (isHindi ? 'यादसाथी में आपका स्वागत है!' : 'Welcome to YaadSaathi!');
+
+  const voiceGreetingHi = seniorDisplayName
+    ? `नमस्ते ${seniorDisplayName}! आज हम साथ में कुछ अच्छा करेंगे। आप आज कैसा महसूस कर रहे हैं?`
+    : 'नमस्ते! यादसाथी में आपका स्वागत है। आज हम साथ में कुछ अच्छा करेंगे। आप आज कैसा महसूस कर रहे हैं?';
+
+  const voiceGreetingEn = seniorDisplayName
+    ? `Good Day ${seniorDisplayName}! Today is a new day to create a new memory. How are you feeling today?`
+    : 'Welcome to YaadSaathi! Today is a new day to create a new memory. How are you feeling today?';
 
   const currentDateDisplay = isHindi
     ? 'मंगलवार, 15 सितंबर 2026'
@@ -43,7 +65,7 @@ export default function Home() {
             </div>
 
             <h1 className="text-3xl sm:text-5xl font-black text-[#102A43] tracking-tight leading-tight">
-              {t('greeting')}
+              {heroHeading}
             </h1>
 
             <p className="text-xl sm:text-2xl font-bold text-[#167A55] pt-1">
@@ -66,8 +88,8 @@ export default function Home() {
 
             <VoiceButton
               id="hero-voice-btn"
-              textHindi="नमस्ते दामोदर जी! आज हम साथ में कुछ अच्छा करेंगे। आप आज कैसा महसूस कर रहे हैं?"
-              textEnglish="Good Day Damodar Sharma Ji! Today is a new day to create a new memory. How are you feeling today?"
+              textHindi={voiceGreetingHi}
+              textEnglish={voiceGreetingEn}
               size="lg"
               label={t('dayMessage')}
               className="shadow-sm"

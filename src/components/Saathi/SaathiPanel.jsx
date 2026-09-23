@@ -32,7 +32,7 @@ export default function SaathiPanel() {
     processInput(query);
   };
 
-  const seniorName = isHindi ? (patient?.nameHindi || 'दामोदर जी') : (patient?.nameEnglish || 'Mr. Damodar');
+  const seniorName = patient?.preferredName || (isHindi ? (patient?.nameHindi || patient?.name || 'वरिष्ठ साथी') : (patient?.nameEnglish || patient?.name || 'Dear Senior'));
 
   // Suggested 1-tap Action Chips (Requirement 3)
   const suggestedActions = [

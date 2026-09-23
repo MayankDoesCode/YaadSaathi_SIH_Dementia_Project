@@ -16,6 +16,7 @@ import VoiceButton from '../components/VoiceButton';
 import * as nerRepository from '../database/repositories/nerRepository.js';
 import { NERState, RegionalLanguageCode } from '../domain/ner/nerTypes.js';
 import { getOrCreateLocalUserId } from '../services/gamePersistenceService.js';
+import { syncNERProfile } from '../services/sync/syncService.js';
 
 export const NER_STATES_LIST = [
   { id: NERState.ASSAM, nameEnglish: 'Assam', nameHindi: 'असम' },
@@ -108,6 +109,7 @@ export default function NERProfile() {
 
     try {
       await nerRepository.updateNERProfile(userId, profileData);
+      syncNERProfile(userId).catch(() => {});
       setIsSaved(true);
       voice.speak(
         'आपकी क्षेत्रीय व सांस्कृतिक प्राथमिकताएं सुरक्षित कर ली गई हैं।',

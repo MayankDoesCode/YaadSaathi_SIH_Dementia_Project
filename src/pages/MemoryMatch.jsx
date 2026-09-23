@@ -25,7 +25,7 @@ export default function MemoryMatch() {
   } = useApp();
   const { t, isHindi } = useI18n();
 
-  const patientName = isHindi ? (patient.nameHindi || 'दामोदर जी') : (patient.nameEnglish || 'Damodar Ji');
+  const patientName = patient?.preferredName || (isHindi ? (patient?.nameHindi || patient?.name || 'वरिष्ठ सदस्य') : (patient?.nameEnglish || patient?.name || 'Dear Senior'));
 
   // Exactly 6 pairs (12 cards)
   const PAIR_COUNT = 6;
@@ -305,8 +305,8 @@ export default function MemoryMatch() {
           setFeedback({ type: 'won', card: null });
 
           voice.speak(
-            t('memoryGameWonSpeech', { name: patient.nameHindi || 'दामोदर जी', pairs: PAIR_COUNT }),
-            t('memoryGameWonSpeech', { name: patient.nameEnglish || 'Damodar Ji', pairs: PAIR_COUNT })
+            t('memoryGameWonSpeech', { name: patientName, pairs: PAIR_COUNT }),
+            t('memoryGameWonSpeech', { name: patientName, pairs: PAIR_COUNT })
           );
         } else {
           // Individual match

@@ -19,6 +19,7 @@ import VoiceButton from '../components/VoiceButton';
 import * as memoryRepository from '../database/repositories/memoryRepository.js';
 import { MemoryItemType } from '../domain/memory/memoryTypes.js';
 import { getOrCreateLocalUserId } from '../services/gamePersistenceService.js';
+import { syncMemories } from '../services/sync/syncService.js';
 
 export const MEMORY_CATEGORIES = [
   { id: MemoryItemType.FAMILY_MEMBER, labelEn: 'Family Member', labelHi: 'परिवार के सदस्य', icon: '👨‍👩‍👧' },
@@ -92,6 +93,7 @@ export default function PersonalMemories() {
     try {
       await memoryRepository.addMemory(newMemory);
       await loadMemories();
+      syncMemories(userId).catch(() => {});
       setShowAddModal(false);
       resetForm();
       voice.speak(
@@ -108,6 +110,7 @@ export default function PersonalMemories() {
     try {
       await memoryRepository.deleteMemory(id);
       await loadMemories();
+      syncMemories(userId).catch(() => {});
     } catch (err) {
       console.warn('[PersonalMemories] Delete error:', err);
     }

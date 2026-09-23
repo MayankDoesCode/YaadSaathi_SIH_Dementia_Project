@@ -9,29 +9,65 @@ import { createGameSession, createGameResult } from '../domain/cognitive/gameTyp
 import { CognitiveDomain } from '../domain/cognitive/cognitiveTypes.js';
 import { DifficultyLevel } from '../domain/cognitive/difficultyTypes.js';
 
-const LOCAL_USER_ID_KEY = 'yaadsaathi_local_user_id';
-const DEFAULT_LOCAL_USER_ID = 'local-elder-default';
+const LOCAL_USER_ID_KEY = 'yaadsaathi_active_user_id';
+const DEFAULT_GUEST_USER_ID = 'guest-elder-local';
+
+let inMemoryActiveUserId = null;
 
 /**
- * Returns a stable, isolated local user ID without requiring authentication.
- * Defaults to a persistent client-side key for single-elder prototype use.
+ * Returns a stable, isolated user ID.
+ * Prioritizes explicitly passed authenticated user ID, or active storage.
  * 
- * @returns {string} Isolated local user identifier
+ * @param {string} [explicitUserId] - Active authenticated user ID
+ * @returns {string} Isolated user identifier
  */
-export function getOrCreateLocalUserId() {
+export function getOrCreateLocalUserId(explicitUserId = null) {
+  if (explicitUserId) return explicitUserId;
+
   try {
-    if (typeof window !== 'undefined' && window.localStorage) {
+    if (typeof localStorage !== 'undefined') {
       let userId = localStorage.getItem(LOCAL_USER_ID_KEY);
       if (!userId) {
-        userId = DEFAULT_LOCAL_USER_ID;
+        userId = inMemoryActiveUserId || DEFAULT_GUEST_USER_ID;
         localStorage.setItem(LOCAL_USER_ID_KEY, userId);
+      }
+      return userId;
+    }
+    if (typeof window !== 'undefined' && window.localStorage) {
+      let userId = window.localStorage.getItem(LOCAL_USER_ID_KEY);
+      if (!userId) {
+        userId = inMemoryActiveUserId || DEFAULT_GUEST_USER_ID;
+        window.localStorage.setItem(LOCAL_USER_ID_KEY, userId);
       }
       return userId;
     }
   } catch (err) {
     console.warn('[YaadSaathi Persistence] Error accessing localStorage for userId:', err);
   }
-  return DEFAULT_LOCAL_USER_ID;
+  return inMemoryActiveUserId || DEFAULT_GUEST_USER_ID;
+}
+
+/**
+ * Sets the active local user ID (called on login/logout)
+ * @param {string} userId
+ */
+export function setActiveLocalUserId(userId) {
+  inMemoryActiveUserId = userId || null;
+  try {
+    if (typeof localStorage !== 'undefined') {
+      if (userId) {
+        localStorage.setItem(LOCAL_USER_ID_KEY, userId);
+      } else {
+        localStorage.removeItem(LOCAL_USER_ID_KEY);
+      }
+    } else if (typeof window !== 'undefined' && window.localStorage) {
+      if (userId) {
+        window.localStorage.setItem(LOCAL_USER_ID_KEY, userId);
+      } else {
+        window.localStorage.removeItem(LOCAL_USER_ID_KEY);
+      }
+    }
+  } catch (err) {}
 }
 
 /**

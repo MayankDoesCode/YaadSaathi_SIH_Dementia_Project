@@ -50,7 +50,9 @@ export const RoutineCategory = Object.freeze({
 export function createRoutineItem({
   id = `rt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
   userId = 'default-user',
+  title = '',
   time = '09:00 AM',
+  scheduledTime = '09:00 AM',
   period = RoutinePeriod.MORNING,
   titleHindi = '',
   titleEnglish = '',
@@ -59,14 +61,17 @@ export function createRoutineItem({
   category = RoutineCategory.WELLNESS,
   icon = 'Sun',
   completed = false,
-}) {
+} = {}) {
+  const resolvedTitle = title || titleEnglish || titleHindi || '';
   return {
     id,
     userId,
-    time,
+    title: resolvedTitle,
+    time: time || scheduledTime,
+    scheduledTime: scheduledTime || time,
     period,
-    titleHindi,
-    titleEnglish,
+    titleHindi: titleHindi || resolvedTitle,
+    titleEnglish: titleEnglish || resolvedTitle,
     descriptionHindi,
     descriptionEnglish,
     category,

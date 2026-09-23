@@ -74,7 +74,7 @@ export default function DailyPlan() {
     }
   }, [isAllComplete]);
 
-  const userName = patient?.name || (isHindi ? 'दामोदर जी' : 'Damodar Ji');
+  const userName = patient?.preferredName || patient?.name || patient?.nameHindi || patient?.nameEnglish || (isHindi ? 'वरिष्ठ साथी' : 'Friend');
 
   if (loading) {
     return (
